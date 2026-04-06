@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 
 type Contact = {
   id?: number;
+  user_id?: string;
   name: string;
   email: string;
   phone: string;
@@ -22,10 +23,28 @@ export default function ContactsPage() {
   });
   const [editId, setEditId] = useState<number | null>(null);
 
+  async function getCurrentUser() {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error) {
+      console.error("Get user error:", error);
+      return null;
+    }
+
+    return user;
+  }
+
   async function loadContacts() {
+    const user = await getCurrentUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from("contacts")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -49,13 +68,32 @@ export default function ContactsPage() {
     e.preventDefault();
     if (!form.name || !form.email) return;
 
+    const user = await getCurrentUser();
+    if (!user) return;
+
     if (editId !== null) {
-      const { error } = await supabase.from("contacts").update(form).eq("id", editId);
-      if (error) return;
+      const { error } = await supabase
+        .from("contacts")
+        .update(form)
+        .eq("id", editId)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Update contact error:", error);
+        return;
+      }
+
       setEditId(null);
     } else {
-      const { error } = await supabase.from("contacts").insert(form);
-      if (error) return;
+      const { error } = await supabase.from("contacts").insert({
+        ...form,
+        user_id: user.id,
+      });
+
+      if (error) {
+        console.error("Insert contact error:", error);
+        return;
+      }
     }
 
     setForm({
@@ -70,8 +108,21 @@ export default function ContactsPage() {
 
   async function handleDeleteContact(id?: number) {
     if (!id) return;
-    const { error } = await supabase.from("contacts").delete().eq("id", id);
-    if (error) return;
+
+    const user = await getCurrentUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("contacts")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Delete contact error:", error);
+      return;
+    }
+
     loadContacts();
   }
 
@@ -101,7 +152,9 @@ export default function ContactsPage() {
     <>
       <div className="mb-8">
         <h1 className="text-4xl font-bold tracking-tight text-slate-900">Contacts</h1>
-        <p className="text-slate-500 mt-2 text-base">Manage sellers, buyers, and business contacts.</p>
+        <p className="text-slate-500 mt-2 text-base">
+          Manage sellers, buyers, and business contacts.
+        </p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
