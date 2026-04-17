@@ -30,16 +30,25 @@ type Note = {
   user_id?: string;
   deal_id: number;
   content: string;
+  type?: string;
   created_at?: string;
 };
 
 const stages = ["New Leads", "Contacted", "Offer Made", "Closed"];
+
+const noteTypes = [
+  { value: "note", label: "Note", icon: "📝" },
+  { value: "call", label: "Call", icon: "📞" },
+  { value: "text", label: "Text", icon: "💬" },
+  { value: "offer", label: "Offer", icon: "💰" },
+];
 
 export default function PipelinePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [noteInputs, setNoteInputs] = useState<Record<number, string>>({});
+  const [noteTypesState, setNoteTypesState] = useState<Record<number, string>>({});
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({
     title: "",
@@ -124,8 +133,7 @@ export default function PipelinePage() {
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Update deal error full:", JSON.stringify(error, null, 2));
-        alert(JSON.stringify(error, null, 2));
+        console.error("Update deal error:", error);
         return;
       }
 
@@ -138,7 +146,6 @@ export default function PipelinePage() {
 
       if (error) {
         console.error("Insert deal error:", error);
-        alert(error.message);
         return;
       }
     }
@@ -171,7 +178,6 @@ export default function PipelinePage() {
 
     if (error) {
       console.error("Delete deal error:", error);
-      alert(error.message);
       return;
     }
 
@@ -192,7 +198,6 @@ export default function PipelinePage() {
 
     if (error) {
       console.error("Stage change error:", error);
-      alert(error.message);
       return;
     }
 
@@ -227,51 +232,38 @@ export default function PipelinePage() {
       );
   }
 
-  async function addNote(dealId: number, contentOverride?: string) {
-    const content = (contentOverride ?? noteInputs[dealId] ?? "").trim();
+  async function addNote(dealId: number) {
+    const content = noteInputs[dealId];
+    const type = noteTypesState[dealId] || "note";
 
-    if (!content) {
-      alert("Type a note first.");
-      return;
-    }
+    if (!content) return;
 
     const user = await getCurrentUser();
-    if (!user) {
-      alert("You are not logged in.");
-      return;
-    }
+    if (!user) return;
 
     const { error } = await supabase.from("notes").insert({
       deal_id: dealId,
       content,
+      type,
       user_id: user.id,
     });
 
     if (error) {
       console.error("Add note error:", error);
-      alert(error.message);
       return;
     }
 
     setNoteInputs((prev) => ({ ...prev, [dealId]: "" }));
-    await loadAll();
-  }
-
-  async function quickAction(
-    dealId: number,
-    action: "call" | "text" | "offer"
-  ) {
-    const actionMap = {
-      call: "📞 Called seller",
-      text: "💬 Sent text",
-      offer: "💰 Made offer",
-    };
-
-    await addNote(dealId, actionMap[action]);
+    setNoteTypesState((prev) => ({ ...prev, [dealId]: "note" }));
+    loadAll();
   }
 
   function handleNoteChange(dealId: number, value: string) {
     setNoteInputs((prev) => ({ ...prev, [dealId]: value }));
+  }
+
+  function handleTypeChange(dealId: number, value: string) {
+    setNoteTypesState((prev) => ({ ...prev, [dealId]: value }));
   }
 
   function parseMoney(value?: string) {
@@ -291,6 +283,10 @@ export default function PipelinePage() {
     return new Date(date).toLocaleString();
   }
 
+  function getTypeMeta(type?: string) {
+    return noteTypes.find((t) => t.value === type) || noteTypes[0];
+  }
+
   const filteredDeals = useMemo(() => {
     const q = search.toLowerCase();
     if (!q) return deals;
@@ -307,7 +303,7 @@ export default function PipelinePage() {
           Pipeline
         </h1>
         <p className="text-slate-500 mt-2 text-base">
-          Track deals, spread, contacts, and note history.
+          Track deals, spread, contacts, and activity history.
         </p>
       </div>
 
@@ -364,22 +360,7 @@ export default function PipelinePage() {
                 const spread = parseMoney(d.arv) - parseMoney(d.offer);
 
                 return (
-                  <div
-                    key={d.id}
-                    className={`p-4 rounded-xl mb-3 border text-sm ${
-                      spread >= 50000
-                        ? "bg-amber-50 border-amber-200"
-                        : "bg-slate-50 border-slate-200"
-                    }`}
-                  >
-                    {spread >= 50000 && (
-                      <div className="mb-2">
-                        <span className="text-[10px] px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-medium">
-                          🔥 Hot Deal
-                        </span>
-                      </div>
-                    )}
-
+                  <div key={d.id} className="bg-slate-50 p-4 rounded-xl mb-3 border border-slate-200 text-sm">
                     <div className="font-bold text-slate-900">{d.title}</div>
                     <div className="text-slate-500">{d.address || "No address"}</div>
 
@@ -393,15 +374,7 @@ export default function PipelinePage() {
                     </div>
 
                     <div className="mt-2 text-slate-600">
-                      {contact ? (
-                        <>
-                          <div className="font-medium text-slate-900">{contact.name}</div>
-                          <div>{contact.phone}</div>
-                          <div>{contact.company}</div>
-                        </>
-                      ) : (
-                        <div>No contact</div>
-                      )}
+                      {contact ? contact.name : "No contact"}
                     </div>
 
                     <select
@@ -415,56 +388,27 @@ export default function PipelinePage() {
                     </select>
 
                     <div className="mt-3 flex gap-4">
-                      <button type="button" onClick={() => handleEditDeal(d)} className="text-blue-600 hover:underline">Edit</button>
-                      <button type="button" onClick={() => handleDeleteDeal(d.id)} className="text-red-600 hover:underline">Delete</button>
-                    </div>
-
-                    <div className="mt-3 flex gap-2 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => quickAction(d.id!, "call")}
-                        className="rounded-lg border border-slate-300 px-2 py-1 bg-white hover:bg-slate-100"
-                      >
-                        📞 Call
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => quickAction(d.id!, "text")}
-                        className="rounded-lg border border-slate-300 px-2 py-1 bg-white hover:bg-slate-100"
-                      >
-                        💬 Text
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => quickAction(d.id!, "offer")}
-                        className="rounded-lg border border-slate-300 px-2 py-1 bg-white hover:bg-slate-100"
-                      >
-                        💰 Offer
-                      </button>
+                      <button onClick={() => handleEditDeal(d)} className="text-blue-600 hover:underline">Edit</button>
+                      <button onClick={() => handleDeleteDeal(d.id)} className="text-red-600 hover:underline">Delete</button>
                     </div>
 
                     <div className="mt-4">
                       <div className="font-semibold text-xs mb-2 text-slate-700">
-                        Timeline
+                        Activity Timeline
                       </div>
 
-                      <div className="relative pl-4 space-y-2 mb-3">
-                        <div className="absolute left-1 top-0 bottom-0 w-px bg-slate-200" />
-                        {getNotesForDeal(d.id).length === 0 ? (
-                          <div className="relative bg-white border border-slate-200 px-3 py-2 rounded-lg text-xs text-slate-400">
-                            No activity yet
-                          </div>
-                        ) : (
-                          getNotesForDeal(d.id).map((n, index) => (
+                      <div className="space-y-2 mb-3">
+                        {getNotesForDeal(d.id).map((n) => {
+                          const meta = getTypeMeta(n.type);
+                          return (
                             <div
                               key={n.id}
-                              className="relative bg-white border border-slate-200 px-3 py-2 rounded-lg text-xs text-slate-700"
+                              className="bg-white border border-slate-200 px-3 py-2 rounded text-xs text-slate-700"
                             >
-                              <div className="absolute -left-[14px] top-3 h-2 w-2 rounded-full bg-slate-500" />
                               <div className="flex items-start justify-between gap-3">
                                 <div>
                                   <div className="font-medium text-slate-900">
-                                    {index === 0 ? "Latest Note" : "Note"}
+                                    {meta.icon} {meta.label}
                                   </div>
                                   <div className="mt-1">{n.content}</div>
                                 </div>
@@ -473,23 +417,36 @@ export default function PipelinePage() {
                                 </div>
                               </div>
                             </div>
-                          ))
-                        )}
+                          );
+                        })}
                       </div>
 
-                      <input
-                        value={noteInputs[d.id!] || ""}
-                        onChange={(e) => handleNoteChange(d.id!, e.target.value)}
-                        placeholder="Add note..."
-                        className="w-full border border-slate-300 px-3 py-2 rounded text-xs"
-                      />
+                      <div className="flex gap-2">
+                        <select
+                          value={noteTypesState[d.id!] || "note"}
+                          onChange={(e) => handleTypeChange(d.id!, e.target.value)}
+                          className="border border-slate-300 px-2 py-2 rounded text-xs bg-white"
+                        >
+                          {noteTypes.map((type) => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        <input
+                          value={noteInputs[d.id!] || ""}
+                          onChange={(e) => handleNoteChange(d.id!, e.target.value)}
+                          placeholder="Add activity..."
+                          className="w-full border border-slate-300 px-3 py-2 rounded text-xs"
+                        />
+                      </div>
 
                       <button
-                        type="button"
                         onClick={() => addNote(d.id!)}
                         className="mt-2 text-xs text-blue-600 hover:underline"
                       >
-                        Add Note
+                        Add Activity
                       </button>
                     </div>
                   </div>
