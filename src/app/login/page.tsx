@@ -48,7 +48,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Login</h1>
-        <p className="text-slate-500 mb-6">Sign in to TerryCRM</p>
+        <p className="text-slate-500 mb-6">Sign in to PipeDesk</p>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <input
