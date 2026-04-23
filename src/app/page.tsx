@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function LandingPage() {
   return (
@@ -77,7 +79,7 @@ export default function LandingPage() {
             <p className="text-slate-500 text-lg max-w-xl mx-auto">Powerful features that work out of the box — no setup, no configuration, no consultants needed.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[{icon:"📋",title:"Visual Kanban Pipeline",desc:"Drag deals through stages with a clean board view. See your entire pipeline at a glance."},{icon:"📅",title:"Follow-up Reminders",desc:"Set follow-up dates on every deal. Overdue deals are flagged in red so nothing falls through."},{icon:"📝",title:"Activity Timeline",desc:"Every call, text, note, and stage change is logged automatically with a timestamp."},{icon:"⚡",title:"Quick Actions",desc:"Log a call, text, or offer with one click. No forms, no friction, just fast activity logging."},{icon:"🔥",title:"Hot Deal Alerts",desc:"High-value opportunities are automatically highlighted so you never miss a big deal."},{icon:"📊",title:"Pipeline Dashboard",desc:"See total pipeline value, spread, fees earned, and overdue follow-ups at the top of every page."},{icon:"👥",title:"Contact Management",desc:"Link contacts to deals and see their full history, phone, email, and company in one place."},{icon:"🔍",title:"Smart Filters",desc:"Filter by hot deals, overdue follow-ups, or stale deals with one click."},{icon:"🔒",title:"Secure & Private",desc:"Your data is yours. Every record is tied to your account — no one else can see your pipeline."}].map((f)=>(
+            {[{icon:"📋",title:"Visual Kanban Pipeline",desc:"See your entire pipeline at a glance with a clean board view."},{icon:"📅",title:"Follow-up Reminders",desc:"Overdue deals are flagged in red so nothing falls through the cracks."},{icon:"📝",title:"Activity Timeline",desc:"Every call, text, note, and stage change is logged automatically."},{icon:"⚡",title:"Quick Actions",desc:"Log a call, text, or offer with one click. No forms, no friction."},{icon:"🔥",title:"Hot Deal Alerts",desc:"High-value opportunities are automatically highlighted."},{icon:"📊",title:"Pipeline Dashboard",desc:"See total pipeline value, fees earned, and overdue follow-ups instantly."},{icon:"👥",title:"Contact Management",desc:"Link contacts to deals and see their full history in one place."},{icon:"🔍",title:"Smart Filters",desc:"Filter by hot deals, overdue follow-ups, or stale deals instantly."},{icon:"🔒",title:"Secure & Private",desc:"Your data is yours. Every record is tied to your account only."}].map((f)=>(
               <div key={f.title} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                 <div className="text-2xl mb-3">{f.icon}</div>
                 <h3 className="font-bold text-slate-900 mb-2">{f.title}</h3>
@@ -87,32 +89,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-      <section id="pricing" className="bg-slate-50 py-24">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Simple, honest pricing</h2>
-            <p className="text-slate-500 text-lg">Start free for 14 days. No credit card required.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl border border-slate-200 p-8">
-              <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-2">Solo</div>
-              <div className="text-4xl font-bold text-slate-900 mb-1">$29<span className="text-lg font-normal text-slate-400">/mo</span></div>
-              <div className="text-sm text-slate-400 mb-8">Perfect for independent professionals</div>
-              <div className="space-y-3 mb-8">{["1 user","All 3 industry pipelines","Unlimited deals & contacts","Activity timeline","Follow-up reminders","Email support"].map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-emerald-500 font-bold">✓</span> {f}</div>))}</div>
-              <Link href="/login" className="block text-center border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
-            </div>
-            <div className="bg-slate-900 rounded-2xl border border-slate-700 p-8 relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full">Most Popular</div>
-              <div className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-2">Team</div>
-              <div className="text-4xl font-bold text-white mb-1">$59<span className="text-lg font-normal text-slate-400">/mo</span></div>
-              <div className="text-sm text-slate-400 mb-8">For growing teams and agencies</div>
-              <div className="space-y-3 mb-8">{["Up to 5 users","All 3 industry pipelines","Unlimited deals & contacts","Activity timeline","Follow-up reminders","Priority support","Team activity feed","Admin controls"].map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-300"><span className="text-blue-400 font-bold">✓</span> {f}</div>))}</div>
-              <Link href="/login" className="block text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
-            </div>
-          </div>
-          <p className="text-center text-sm text-slate-400 mt-8">Both plans include a 14-day free trial · No credit card required · Cancel anytime</p>
-        </div>
-      </section>
+      <PricingSection />
       <section className="py-24">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold text-slate-900 mb-6">Ready to close more deals?</h2>
@@ -137,5 +114,52 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function PricingSection() {
+  const [annual, setAnnual] = useState(false);
+  return (
+    <section id="pricing" className="bg-slate-50 py-24">
+      <div className="max-w-4xl mx-auto px-6">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-slate-900 mb-4">Simple, honest pricing</h2>
+          <p className="text-slate-500 text-lg mb-8">Start free for 14 days. No credit card required.</p>
+          <div className="inline-flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1">
+            <button onClick={()=>setAnnual(false)} className={`px-5 py-2 rounded-lg text-sm font-semibold transition ${!annual?"bg-slate-900 text-white":"text-slate-500 hover:text-slate-900"}`}>Monthly</button>
+            <button onClick={()=>setAnnual(true)} className={`px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${annual?"bg-slate-900 text-white":"text-slate-500 hover:text-slate-900"}`}>
+              Annual
+              <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Save 20%</span>
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 p-8">
+            <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-2">Solo</div>
+            <div className="flex items-baseline gap-1 mb-1">
+              <div className="text-4xl font-bold text-slate-900">${annual?"23":"29"}</div>
+              <div className="text-lg font-normal text-slate-400">/mo</div>
+            </div>
+            {annual && <div className="text-sm text-emerald-600 font-medium mb-1">$276/yr · save $72</div>}
+            <div className="text-sm text-slate-400 mb-8">Perfect for independent professionals</div>
+            <div className="space-y-3 mb-8">{["1 user","All 3 industry pipelines","Unlimited deals & contacts","Activity timeline","Follow-up reminders","Email support"].map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-emerald-500 font-bold">✓</span> {f}</div>))}</div>
+            <Link href="/login" className="block text-center border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
+          </div>
+          <div className="bg-slate-900 rounded-2xl border border-slate-700 p-8 relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full">Most Popular</div>
+            <div className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-2">Team</div>
+            <div className="flex items-baseline gap-1 mb-1">
+              <div className="text-4xl font-bold text-white">${annual?"47":"59"}</div>
+              <div className="text-lg font-normal text-slate-400">/mo</div>
+            </div>
+            {annual && <div className="text-sm text-emerald-400 font-medium mb-1">$564/yr · save $144</div>}
+            <div className="text-sm text-slate-400 mb-8">For growing teams and agencies</div>
+            <div className="space-y-3 mb-8">{["Up to 5 users","All 3 industry pipelines","Unlimited deals & contacts","Activity timeline","Follow-up reminders","Priority support","Team activity feed","Admin controls"].map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-300"><span className="text-blue-400 font-bold">✓</span> {f}</div>))}</div>
+            <Link href="/login" className="block text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
+          </div>
+        </div>
+        <p className="text-center text-sm text-slate-400 mt-8">Both plans include a 14-day free trial · No credit card required · Cancel anytime</p>
+      </div>
+    </section>
   );
 }
