@@ -36,7 +36,7 @@ export default function LandingPage() {
         </div>
         <p className="text-xs text-slate-400 mt-4">No credit card required · Cancel anytime</p>
         <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto mt-16 pt-16 border-t border-slate-100">
-          {[{value:"3",label:"Industries supported"},{value:"$29",label:"Per month to start"},{value:"14",label:"Day free trial"}].map((s)=>(
+          {[{value:"13",label:"Industries supported"},{value:"$29",label:"Per month to start"},{value:"14",label:"Day free trial"}].map((s)=>(
             <div key={s.label}><div className="text-3xl font-bold text-slate-900">{s.value}</div><div className="text-xs text-slate-400 mt-1">{s.label}</div></div>
           ))}
         </div>
