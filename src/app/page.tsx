@@ -22,7 +22,7 @@ export default function LandingPage() {
       </nav>
       <section className="max-w-6xl mx-auto px-6 pt-20 pb-24 text-center">
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-semibold px-4 py-2 rounded-full mb-6 border border-blue-200">
-          🚀 Built for Real Professionals · 3 Industries · 1 Platform
+          🚀 Built for Real Professionals · 13 Industries · 1 Platform
         </div>
         <h1 className="text-5xl md:text-6xl font-bold text-slate-900 tracking-tight leading-tight mb-6">
           The CRM built for<br /><span className="text-blue-600">your industry</span>
