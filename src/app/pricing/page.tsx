@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 const PLANS = [
   {
@@ -8,8 +9,7 @@ const PLANS = [
     period: "/month",
     description: "Perfect for individual professionals",
     priceId: "price_1TT1CDANf6sspitdbeYGjnih",
-    features: ["1 user","All 13 industry pipelines","Unlimited deals & contacts","Follow-up reminders","Hot deal alerts","Activity timeline","Email support"],
-    color: "blue",
+    features: ["1 user","All 18 industry pipelines","Unlimited deals & contacts","Follow-up reminders","Hot deal alerts","Activity timeline","Email support"],
     popular: false,
   },
   {
@@ -18,24 +18,29 @@ const PLANS = [
     period: "/month",
     description: "For small teams closing more deals",
     priceId: "price_1TT1CDANf6sspitdK6JFF3uq",
-    features: ["Up to 5 users","All 13 industry pipelines","Unlimited deals & contacts","Follow-up reminders","Hot deal alerts","Activity timeline","Priority support","Team activity feed"],
-    color: "blue",
+    features: ["Up to 5 users","All 18 industry pipelines","Unlimited deals & contacts","Follow-up reminders","Hot deal alerts","Activity timeline","Priority support","Team activity feed"],
     popular: true,
   },
 ];
 
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
+  const [userEmail, setUserEmail] = useState<string>("");
+  const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) setUserEmail(data.user.email);
+    });
+  }, []);
 
   async function handleCheckout(priceId: string, planName: string) {
-    if (!email) { alert("Please enter your email first"); return; }
     setLoading(planName);
     try {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, email }),
+        body: JSON.stringify({ priceId, email: userEmail }),
       });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; }
@@ -49,18 +54,10 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 -m-8">
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-3">
-        <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">PD</div>
-        <h1 className="text-base font-bold text-slate-900">PipeDesk Pricing</h1>
-      </div>
       <div className="max-w-4xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-slate-900 mb-4">Simple, honest pricing</h2>
           <p className="text-lg text-slate-500">14-day free trial. No credit card required. Cancel anytime.</p>
-        </div>
-        <div className="mb-8 max-w-sm mx-auto">
-          <label className="block text-sm font-semibold text-slate-600 mb-2 text-center">Enter your email to get started</label>
-          <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="you@example.com" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"/>
         </div>
         <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
           {PLANS.map((plan)=>(
@@ -83,12 +80,6 @@ export default function PricingPage() {
               <p className="text-center text-xs text-slate-400 mt-3">No credit card required</p>
             </div>
           ))}
-        </div>
-        <div className="mt-16 text-center">
-          <h3 className="text-xl font-bold text-slate-900 mb-8">Everything included in every plan</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {["🏠 Real Estate","🛡️ Insurance","🏦 Mortgage","🚗 Automotive","☀️ Solar","💼 Financial","⚖️ Legal","👔 Recruiting","🏥 Healthcare","🏗️ Construction","🎯 Consulting","🛒 E-Commerce","🏠 Property Mgmt","📊 Dashboard"].map((i)=>(<div key={i} className="bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-medium text-slate-600">{i}</div>))}
-          </div>
         </div>
       </div>
     </div>
