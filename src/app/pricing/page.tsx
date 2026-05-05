@@ -16,7 +16,7 @@ export default function PricingPage() {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, email: "user@pipedesk.app" }),
+        body: JSON.stringify({ priceId, email: "noreply@pipedesk.app" }),
       });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; }
