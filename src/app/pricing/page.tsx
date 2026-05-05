@@ -1,6 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useState } from "react";
 
 const PLANS = [
   { name: "Solo", price: "$29", period: "/month", description: "Perfect for individual professionals", priceId: "price_1TT1CDANf6sspitdbeYGjnih", features: ["1 user","All 18 industry pipelines","Unlimited deals & contacts","Follow-up reminders","Hot deal alerts","Activity timeline","Email support"], popular: false },
@@ -9,14 +8,7 @@ const PLANS = [
 
 export default function PricingPage() {
   const [loading, setLoading] = useState(null);
-  const [userEmail, setUserEmail] = useState("");
-  const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.email) setUserEmail(data.user.email);
-    });
-  }, []);
 
   async function handleCheckout(priceId, planName) {
     setLoading(planName);
@@ -24,7 +16,7 @@ export default function PricingPage() {
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, email: userEmail }),
+        body: JSON.stringify({ priceId, email: "user@pipedesk.app" }),
       });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; }
