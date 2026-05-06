@@ -19,12 +19,12 @@ export default function AuthGate({
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session && pathname !== "/login") {
+      if (!session && pathname !== "/login" && pathname !== "/" && pathname !== "/pricing") {
         router.replace("/login");
         return;
       }
 
-      if (session && pathname === "/login") {
+      if (session && (pathname === "/login")) {
         router.replace("/");
         return;
       }
