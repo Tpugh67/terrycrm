@@ -3,9 +3,9 @@ import Link from "next/link";
 import { useState } from "react";
 
 const ALL_INDUSTRIES = [
-  { code: "RE", label: "Real Estate", color: "bg-blue-600", desc: "Track wholesale deals, calculate ARV and spread, log seller activity, and move deals from New Lead to Closed with one click.", features: ["ARV & spread calculator","Hot deal alerts ($50K+ spread)","5-stage pipeline","Seller contact timeline","Follow-up reminders"], accent: "blue" },
-  { code: "IN", label: "Insurance", color: "bg-emerald-600", desc: "Manage policies from first quote to closed, track renewal dates, and never miss a follow-up with automated reminders.", features: ["Policy pipeline tracking","Renewal date reminders","6-stage pipeline","Premium & coverage tracking","Conversion rate dashboard"], accent: "emerald" },
-  { code: "ML", label: "Mortgage & Lending", color: "bg-violet-600", desc: "Track loan applications from inquiry to funding, calculate LTV automatically, and manage your entire borrower pipeline.", features: ["LTV calculator built in","6-stage loan pipeline","Jumbo loan flagging","Document request tracking","Close date reminders"], accent: "violet" },
+  { code: "RE", label: "Real Estate", color: "bg-blue-600", desc: "Track wholesale deals, calculate ARV and spread, log seller activity, and move deals from New Lead to Closed with one click.", features: ["ARV & spread calculator","Hot deal alerts ($50K+ spread)","5-stage pipeline","Seller contact timeline","Follow-up reminders"] },
+  { code: "IN", label: "Insurance", color: "bg-emerald-600", desc: "Manage policies from first quote to closed, track renewal dates, and never miss a follow-up with automated reminders.", features: ["Policy pipeline tracking","Renewal date reminders","6-stage pipeline","Premium & coverage tracking","Conversion rate dashboard"] },
+  { code: "ML", label: "Mortgage & Lending", color: "bg-violet-600", desc: "Track loan applications from inquiry to funding, calculate LTV automatically, and manage your entire borrower pipeline.", features: ["LTV calculator built in","6-stage loan pipeline","Jumbo loan flagging","Document request tracking","Close date reminders"] },
   { code: "AU", label: "Automotive", color: "bg-red-600" },
   { code: "SO", label: "Solar Energy", color: "bg-yellow-500" },
   { code: "FI", label: "Financial Services", color: "bg-blue-700" },
@@ -42,7 +42,6 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-20 pb-24 text-center">
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-semibold px-4 py-2 rounded-full mb-6 border border-blue-200">
           🚀 Built for Real Professionals · 18 Industries · 1 Platform
@@ -65,7 +64,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Top 3 industry cards */}
       <section id="industries" className="bg-slate-50 py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -78,13 +76,11 @@ export default function LandingPage() {
                 <div className={`w-12 h-12 rounded-xl ${ind.color} flex items-center justify-center text-white font-bold text-lg mb-6`}>{ind.code}</div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">{ind.label}</h3>
                 <p className="text-slate-500 text-sm mb-6 leading-relaxed">{ind.desc}</p>
-                <div className="space-y-2 mb-8">{(ind.features || []).map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-blue-500 font-bold">✓</span> {f}</div>))}</div>
+                <div className="space-y-2 mb-8">{(ind.features||[]).map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-blue-500 font-bold">✓</span> {f}</div>))}</div>
                 <Link href="/login?mode=signup" className={`block text-center ${ind.color} hover:opacity-90 text-white font-semibold text-sm py-3 rounded-xl transition`}>Try {ind.label} CRM →</Link>
               </div>
             ))}
           </div>
-
-          {/* All 18 industry grid */}
           <div className="text-center mb-8">
             <p className="text-slate-600 font-semibold">Plus 15 more industry pipelines:</p>
           </div>
@@ -99,7 +95,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
       <section id="features" className="py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -120,7 +115,6 @@ export default function LandingPage() {
 
       <PricingSection />
 
-      {/* CTA */}
       <section className="py-24">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold text-slate-900 mb-6">Ready to close more deals?</h2>
@@ -130,7 +124,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-slate-200 py-10 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
