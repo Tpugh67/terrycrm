@@ -15,14 +15,20 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     const publicPage = PUBLIC_PATHS.includes(pathname);
 
     async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+
       if (publicPage) {
+        // If logged in and on login page, go to dashboard
+        if (session && pathname === "/login") {
+          router.replace("/dashboard");
+          return;
+        }
         setIsPublic(true);
         setChecked(true);
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-
+      // Private page, not logged in → send to login
       if (!session) {
         router.replace("/login");
         return;
@@ -47,9 +53,6 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  // Public pages: render children WITHOUT AppLayout (no sidebar)
-  if (isPublic) return <>{children}</>;
 
   return <>{children}</>;
 }
