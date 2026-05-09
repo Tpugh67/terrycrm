@@ -38,7 +38,7 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/login" className="text-sm text-slate-600 hover:text-slate-900 transition font-medium">Log in</Link>
-          <Link href="/pricing" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Start free trial</Link>
+          <Link href="/login?mode=signup" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Start free trial</Link>
         </div>
       </nav>
 
@@ -54,7 +54,7 @@ export default function LandingPage() {
           PipeDesk gives real estate investors, insurance agents, mortgage brokers, solar reps, recruiters, contractors, and 12 more industries a purpose-built pipeline — not a generic tool you have to configure yourself.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/pricing" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-8 py-4 rounded-xl transition w-full sm:w-auto text-center">Start your free 14-day trial</Link>
+          <Link href="/login?mode=signup" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-8 py-4 rounded-xl transition w-full sm:w-auto text-center">Start your free 14-day trial</Link>
           <a href="#industries" className="text-slate-600 hover:text-slate-900 font-medium text-base px-8 py-4 rounded-xl border border-slate-200 hover:border-slate-300 transition w-full sm:w-auto text-center">See all 18 industries →</a>
         </div>
         <p className="text-xs text-slate-400 mt-4">No credit card required · Cancel anytime</p>
@@ -79,7 +79,7 @@ export default function LandingPage() {
                 <h3 className="text-xl font-bold text-slate-900 mb-3">{ind.label}</h3>
                 <p className="text-slate-500 text-sm mb-6 leading-relaxed">{ind.desc}</p>
                 <div className="space-y-2 mb-8">{(ind.features || []).map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-blue-500 font-bold">✓</span> {f}</div>))}</div>
-                <Link href="/pricing" className={`block text-center ${ind.color} hover:opacity-90 text-white font-semibold text-sm py-3 rounded-xl transition`}>Try {ind.label} CRM →</Link>
+                <Link href="/login?mode=signup" className={`block text-center ${ind.color} hover:opacity-90 text-white font-semibold text-sm py-3 rounded-xl transition`}>Try {ind.label} CRM →</Link>
               </div>
             ))}
           </div>
@@ -90,7 +90,7 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
             {ALL_INDUSTRIES.slice(3).map((ind) => (
-              <Link key={ind.code} href="/pricing" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white hover:shadow transition group">
+              <Link key={ind.code} href="/login?mode=signup" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white hover:shadow transition group">
                 <div className={`w-10 h-10 rounded-xl ${ind.color} flex items-center justify-center text-white text-xs font-bold group-hover:scale-110 transition`}>{ind.code}</div>
                 <span className="text-[10px] text-slate-500 text-center leading-tight group-hover:text-slate-800">{ind.label}</span>
               </Link>
@@ -125,7 +125,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold text-slate-900 mb-6">Ready to close more deals?</h2>
           <p className="text-xl text-slate-500 mb-10">Join professionals across 18 industries using PipeDesk to manage their pipeline and never miss a follow-up.</p>
-          <Link href="/pricing" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-10 py-5 rounded-xl transition">Start your free 14-day trial →</Link>
+          <Link href="/login?mode=signup" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-10 py-5 rounded-xl transition">Start your free 14-day trial →</Link>
           <p className="text-sm text-slate-400 mt-4">No credit card required · Set up in under 2 minutes</p>
         </div>
       </section>
@@ -176,7 +176,7 @@ function PricingSection() {
             {annual && <div className="text-sm text-emerald-600 font-medium mb-1">$276/yr · save $72</div>}
             <div className="text-sm text-slate-400 mb-8">Perfect for independent professionals</div>
             <div className="space-y-3 mb-8">{["1 user","All 18 industry pipelines","Unlimited deals & contacts","Activity timeline","Follow-up reminders","Email support"].map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-emerald-500 font-bold">✓</span> {f}</div>))}</div>
-            <Link href="/pricing" className="block text-center border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
+            <Link href="/login?mode=signup" className="block text-center border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
           </div>
           <div className="bg-slate-900 rounded-2xl border border-slate-700 p-8 relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full">Most Popular</div>
@@ -188,7 +188,7 @@ function PricingSection() {
             {annual && <div className="text-sm text-emerald-400 font-medium mb-1">$564/yr · save $144</div>}
             <div className="text-sm text-slate-400 mb-8">For growing teams and agencies</div>
             <div className="space-y-3 mb-8">{["Up to 5 users","All 18 industry pipelines","Unlimited deals & contacts","Activity timeline","Follow-up reminders","Priority support","Team activity feed","Admin controls"].map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-300"><span className="text-blue-400 font-bold">✓</span> {f}</div>))}</div>
-            <Link href="/pricing" className="block text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
+            <Link href="/login?mode=signup" className="block text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
           </div>
         </div>
         <p className="text-center text-sm text-slate-400 mt-8">Both plans include a 14-day free trial · No credit card required · Cancel anytime</p>
