@@ -10,7 +10,7 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(null);
 
 
-  async function handleCheckout(priceId, planName) {
+  async function handleCheckout(priceId: string, planName: string) {
     setLoading(planName);
     try {
       const res = await fetch("/api/create-checkout-session", {
