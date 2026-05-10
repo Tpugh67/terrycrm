@@ -7,7 +7,7 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
-  const [loading, setLoading] = useState(null);
+  const [loading, setLoading] = useState<string | null>(null);
 
 
   async function handleCheckout(priceId: string, planName: string) {
