@@ -510,14 +510,21 @@ export default function PipelinePage() {
                                   </div>
                                   <div>
                                     <div className="text-xs font-semibold text-slate-700">{contact.name}</div>
-                                    <div className="text-[10px] text-slate-400">{contact.phone}</div>
+                                    <div className="text-[10px] text-slate-400">{contact.phone || (d as any).phone}</div>
                                   </div>
                                 </>
+                              ) : (d as any).phone ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px]">📞</span>
+                                  <span className="text-xs text-slate-600">{(d as any).phone}</span>
+                                </div>
                               ) : (
                                 <span className="text-xs text-slate-400">No contact</span>
                               )}
                             </div>
                             <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                              {(d as any).priority === "urgent" && <span className="text-red-500 font-bold">🚨</span>}
+                              {(d as any).priority === "high" && <span className="text-orange-500 font-bold">🔴</span>}
                               {dealNotes.length > 0 && <span>{dealNotes.length} note{dealNotes.length !== 1 ? "s" : ""} · </span>}
                               <span>{expanded ? "▲" : "▼"}</span>
                             </div>
