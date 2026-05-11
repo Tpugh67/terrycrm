@@ -1,4 +1,5 @@
 "use client";
+import { getIndustryConfig } from "../../lib/industryConfig";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 type Deal = { id?: number; user_id?: string; title: string; address?: string; arv?: string; offer?: string; seller: string; amount?: string; stage: string; contact_email?: string; next_follow_up?: string; created_at?: string; updated_at?: string; };

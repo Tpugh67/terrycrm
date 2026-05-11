@@ -1,4 +1,5 @@
 "use client";
+import { getIndustryConfig } from "../../lib/industryConfig";
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
@@ -95,6 +96,7 @@ function isStale(deal: Deal) {
 }
 
 export default function MortgagePipeline() {
+  const config = getIndustryConfig("mortgage");
   const [deals, setDeals] = useState<Deal[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
