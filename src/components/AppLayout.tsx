@@ -54,6 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isPublic = PUBLIC_PATHS.includes(pathname);
   const [userEmail, setUserEmail] = useState("");
   const [userInitials, setUserInitials] = useState("?");
+  const [userIndustry, setUserIndustry] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const isIndustryPage = INDUSTRIES.some(i => i.href === pathname);
   const [industriesOpen, setIndustriesOpen] = useState(false);
@@ -64,6 +65,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (user?.email) {
         setUserEmail(user.email);
         setUserInitials(user.email.slice(0, 2).toUpperCase());
+        const { data: profile } = await supabase.from("profiles").select("industry").eq("id", user.id).single();
+        if (profile?.industry) setUserIndustry(profile.industry);
       }
     });
   }, []);
@@ -120,7 +123,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <span className="text-slate-600">{industriesOpen ? "▲" : "▼"}</span>
         </button>
 
-        {industriesOpen && INDUSTRIES.map((ind) => {
+        {industriesOpen && INDUSTRIES.filter(ind => !userIndustry || ind.href === "/" + userIndustry).map((ind) => {
           const active = pathname === ind.href;
           return (
             <Link key={ind.href} href={ind.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition ${active ? "bg-slate-800 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
