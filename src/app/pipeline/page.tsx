@@ -191,20 +191,22 @@ export default function PipelinePage() {
     const user = await getCurrentUser();
     if (!user) { setSaving(false); return; }
 
+    const payload = {
+      title: form.title, address: form.address, arv: form.arv,
+      offer: form.offer, seller: form.seller, amount: form.amount,
+      stage: form.stage, contact_email: form.contact_email,
+      next_follow_up: form.next_follow_up || null,
+      phone: (form as any).phone || null,
+      priority: (form as any).priority || "normal",
+      updated_at: new Date().toISOString(),
+    };
+
     if (editId !== null) {
-      const { error } = await supabase.from("deals").update({
-        title: form.title, address: form.address, arv: form.arv,
-        offer: form.offer, seller: form.seller, amount: form.amount,
-        stage: form.stage, contact_email: form.contact_email,
-        next_follow_up: form.next_follow_up || null,
-        updated_at: new Date().toISOString(),
-      }).eq("id", editId).eq("user_id", user.id);
+      const { error } = await supabase.from("deals").update(payload).eq("id", editId).eq("user_id", user.id);
       if (error) { alert(`Update failed: ${error.message}`); setSaving(false); return; }
       await supabase.from("notes").insert({ deal_id: editId, user_id: user.id, content: "✏️ Deal updated" });
     } else {
-      const { error } = await supabase.from("deals").insert({
-        ...form, next_follow_up: form.next_follow_up || null, user_id: user.id,
-      });
+      const { error } = await supabase.from("deals").insert({ ...payload, user_id: user.id });
       if (error) { alert(`Insert failed: ${error.message}`); setSaving(false); return; }
     }
 
