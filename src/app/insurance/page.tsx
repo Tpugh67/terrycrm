@@ -15,6 +15,8 @@ type Deal = {
   amount?: string;
   stage: string;
   contact_email?: string;
+  phone?: string;
+  priority?: string;
   next_follow_up?: string;
   created_at?: string;
   updated_at?: string;
@@ -54,7 +56,7 @@ const POLICY_TYPES = ["Auto", "Home", "Life", "Health", "Commercial", "Umbrella"
 const EMPTY_FORM = {
   title: "", address: "", arv: "", offer: "",
   seller: "", amount: "", stage: "New Lead",
-  contact_email: "", next_follow_up: "",
+  contact_email: "", next_follow_up: "", phone: "", priority: "normal",
 };
 
 function parseMoney(v?: string) {
