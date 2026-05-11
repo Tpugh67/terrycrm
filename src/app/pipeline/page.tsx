@@ -689,6 +689,24 @@ export default function PipelinePage() {
                 </select>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Phone</label>
+                  <input name="phone" value={(form as any).phone || ""} onChange={handleChange}
+                    placeholder="555-123-4567"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Priority</label>
+                  <select name="priority" value={(form as any).priority || "normal"} onChange={handleChange}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="normal">Normal</option>
+                    <option value="high">🔴 High</option>
+                    <option value="urgent">🚨 Urgent</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-2 pb-6">
                 <button type="submit" disabled={saving}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm py-3 rounded-lg transition">
