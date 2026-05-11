@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -281,6 +281,60 @@ export default function PipelinePage() {
   const closedFees = deals.filter((d) => d.stage === "Closed").reduce((s, d) => s + parseMoney(d.amount), 0);
   const overdueCount = deals.filter((d) => isOverdue(d.next_follow_up)).length;
 
+  function handleExport() {
+    const fields = ["title","seller","stage","address","arv","offer","amount","contact_email","next_follow_up"];
+    const header = fields.join(",");
+    const rows = deals.map(d => fields.map(f => `"${((d as any)[f] || "").toString().replace(/"/g, '""')}"`).join(","));
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pipedesk-deals-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true); setImportMsg("");
+    try {
+      const text = await file.text();
+      const lines = text.trim().split("\n");
+      const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, "").toLowerCase());
+      const parsed = lines.slice(1).map(line => {
+        const vals = line.match(/(".*?"|[^,]+)(?=,|$)/g) || [];
+        const obj: any = {};
+        headers.forEach((h, i) => { obj[h] = (vals[i] || "").replace(/^"|"$/g, "").trim(); });
+        return {
+          title: obj.title || obj.property || obj.name || "Untitled",
+          seller: obj.seller || obj.contact || obj.client || "",
+          stage: obj.stage || "New Leads",
+          address: obj.address || "",
+          arv: obj.arv || obj.value || "",
+          offer: obj.offer || obj.price || "",
+          amount: obj.amount || obj.revenue || "",
+          contact_email: obj.contact_email || obj.email || "",
+          next_follow_up: obj.next_follow_up || obj.follow_up || "",
+        };
+      });
+      const user = await getCurrentUser();
+      if (!user) { setImportMsg("❌ Not logged in"); setImporting(false); return; }
+      const rows = parsed.map(d => ({ ...d, user_id: user.id }));
+      const { error } = await supabase.from("deals").insert(rows);
+      if (error) { setImportMsg("❌ " + error.message); setImporting(false); return; }
+      setImportMsg(`✅ Imported ${parsed.length} deals!`);
+      await loadAll();
+    } catch(err) { setImportMsg("❌ Import failed. Check CSV format."); }
+    setImporting(false);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
 
@@ -299,11 +353,27 @@ export default function PipelinePage() {
             className="text-sm border border-slate-200 rounded-lg px-3 py-2 w-52 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
           />
           <button
+            onClick={handleExport}
+            disabled={deals.length === 0}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-semibold rounded-lg transition disabled:opacity-40"
+          >
+            ⬇️ Export
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={importing}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:border-blue-300 text-slate-600 text-sm font-semibold rounded-lg transition"
+          >
+            {importing ? "⏳..." : "⬆️ Import"}
+          </button>
+          <input ref={fileRef} type="file" accept=".csv" onChange={handleImport} className="hidden" />
+          <button
             onClick={() => openAdd()}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center gap-1"
           >
             <span className="text-lg leading-none">+</span> Add Deal
           </button>
+          {importMsg && <span className={`text-xs px-2 py-1 rounded-lg ${importMsg.startsWith("✅") ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>{importMsg}</span>}
         </div>
       </div>
 

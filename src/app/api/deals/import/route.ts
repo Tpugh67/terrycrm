@@ -1,0 +1,20 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
+
+export async function POST(req: NextRequest) {
+  try {
+    const { deals, user_id } = await req.json();
+    if (!deals || !user_id) return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    const rows = deals.map((d: any) => ({ ...d, user_id }));
+    const { data, error } = await supabase.from("deals").insert(rows).select();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ imported: data?.length || 0 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
