@@ -55,7 +55,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [userEmail, setUserEmail] = useState("");
   const [userInitials, setUserInitials] = useState("?");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isIndustryPage = INDUSTRIES.some(i => i.href === pathname);
   const [industriesOpen, setIndustriesOpen] = useState(false);
+  useEffect(() => { if (isIndustryPage) setIndustriesOpen(true); }, [pathname]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -101,7 +103,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href} className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition ${active ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
+            <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition ${active ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
               <span className="text-base">{item.icon}</span>
               <span>{item.label}</span>
               {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white opacity-80" />}
@@ -121,7 +123,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {industriesOpen && INDUSTRIES.map((ind) => {
           const active = pathname === ind.href;
           return (
-            <Link key={ind.href} href={ind.href} className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition ${active ? "bg-slate-800 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
+            <Link key={ind.href} href={ind.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition ${active ? "bg-slate-800 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
               <span className={`w-5 h-5 rounded ${ind.color} flex items-center justify-center text-[9px] font-bold flex-shrink-0 text-white`}>{ind.code}</span>
               <span className="truncate text-xs">{ind.label}</span>
               {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400" />}
@@ -130,7 +132,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         })}
 
         <div className="text-[9px] font-bold text-slate-600 uppercase tracking-widest px-3 pt-4 mb-1.5">Account</div>
-        <Link href="/settings" className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition ${pathname === "/settings" ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
+        <Link href="/settings" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition ${pathname === "/settings" ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
           <span>⚙️</span><span>Settings</span>
         </Link>
         <button onClick={handleLogout} className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition text-red-400 hover:bg-red-900/20 hover:text-red-300">
