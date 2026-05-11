@@ -3,24 +3,24 @@ import Link from "next/link";
 import { useState } from "react";
 
 const ALL_INDUSTRIES = [
-  { code: "RE", label: "Real Estate", color: "bg-blue-600", desc: "Track wholesale deals, calculate ARV and spread, log seller activity, and move deals from New Lead to Closed with one click.", features: ["ARV & spread calculator","Hot deal alerts ($50K+ spread)","5-stage pipeline","Seller contact timeline","Follow-up reminders"] },
-  { code: "IN", label: "Insurance", color: "bg-emerald-600", desc: "Manage policies from first quote to closed, track renewal dates, and never miss a follow-up with automated reminders.", features: ["Policy pipeline tracking","Renewal date reminders","6-stage pipeline","Premium & coverage tracking","Conversion rate dashboard"] },
-  { code: "ML", label: "Mortgage & Lending", color: "bg-violet-600", desc: "Track loan applications from inquiry to funding, calculate LTV automatically, and manage your entire borrower pipeline.", features: ["LTV calculator built in","6-stage loan pipeline","Jumbo loan flagging","Document request tracking","Close date reminders"] },
-  { code: "AU", label: "Automotive", color: "bg-red-600" },
-  { code: "SO", label: "Solar Energy", color: "bg-yellow-500" },
-  { code: "FI", label: "Financial Services", color: "bg-blue-700" },
-  { code: "LG", label: "Legal", color: "bg-slate-700" },
-  { code: "RC", label: "Recruiting", color: "bg-indigo-600" },
-  { code: "HC", label: "Healthcare", color: "bg-cyan-600" },
-  { code: "CO", label: "Construction", color: "bg-orange-600" },
-  { code: "CN", label: "Consulting", color: "bg-purple-600" },
-  { code: "EC", label: "E-Commerce", color: "bg-pink-600" },
-  { code: "PM", label: "Property Mgmt", color: "bg-teal-600" },
-  { code: "TR", label: "Trucking & Logistics", color: "bg-blue-800" },
-  { code: "DT", label: "Dental", color: "bg-sky-500" },
-  { code: "FW", label: "Fitness & Wellness", color: "bg-green-600" },
-  { code: "NP", label: "Nonprofit", color: "bg-rose-600" },
-  { code: "ED", label: "Education", color: "bg-indigo-500" },
+  { code: "RE", label: "Real Estate", color: "bg-blue-600", href: "/real-estate", emoji: "🏠", tagline: "For wholesalers & investors" },
+  { code: "IN", label: "Insurance", color: "bg-emerald-600", href: "/insurance", emoji: "🛡️", tagline: "For agents & brokers" },
+  { code: "ML", label: "Mortgage & Lending", color: "bg-violet-600", href: "/mortgage", emoji: "🏦", tagline: "For loan officers" },
+  { code: "AU", label: "Automotive", color: "bg-red-600", href: "/auto", emoji: "🚗", tagline: "For dealers & sales" },
+  { code: "SO", label: "Solar Energy", color: "bg-yellow-500", href: "/solar", emoji: "☀️", tagline: "For solar reps" },
+  { code: "FI", label: "Financial Services", color: "bg-blue-700", href: "/financial", emoji: "📈", tagline: "For advisors & planners" },
+  { code: "LG", label: "Legal", color: "bg-slate-700", href: "/legal", emoji: "⚖️", tagline: "For attorneys & firms" },
+  { code: "RC", label: "Recruiting", color: "bg-indigo-600", href: "/recruiting", emoji: "🎯", tagline: "For recruiters & agencies" },
+  { code: "HC", label: "Healthcare", color: "bg-cyan-600", href: "/healthcare", emoji: "🏥", tagline: "For practices & clinics" },
+  { code: "CO", label: "Construction", color: "bg-orange-600", href: "/construction", emoji: "🏗️", tagline: "For contractors & builders" },
+  { code: "CN", label: "Consulting", color: "bg-purple-600", href: "/consulting", emoji: "💡", tagline: "For consultants & coaches" },
+  { code: "EC", label: "E-Commerce", color: "bg-pink-600", href: "/ecommerce", emoji: "🛒", tagline: "For stores & brands" },
+  { code: "PM", label: "Property Mgmt", color: "bg-teal-600", href: "/property-management", emoji: "🏢", tagline: "For property managers" },
+  { code: "TR", label: "Trucking & Logistics", color: "bg-blue-800", href: "/trucking", emoji: "🚛", tagline: "For carriers & dispatchers" },
+  { code: "DT", label: "Dental", color: "bg-sky-500", href: "/dental", emoji: "🦷", tagline: "For dental practices" },
+  { code: "FW", label: "Fitness & Wellness", color: "bg-green-600", href: "/fitness", emoji: "💪", tagline: "For gyms & coaches" },
+  { code: "NP", label: "Nonprofit", color: "bg-rose-600", href: "/nonprofit", emoji: "❤️", tagline: "For nonprofits & charities" },
+  { code: "ED", label: "Education", color: "bg-indigo-500", href: "/education", emoji: "🎓", tagline: "For schools & tutors" },
 ];
 
 export default function LandingPage() {
@@ -42,7 +42,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <section className="max-w-6xl mx-auto px-6 pt-20 pb-24 text-center">
+      <section className="max-w-6xl mx-auto px-6 pt-20 pb-16 text-center">
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-semibold px-4 py-2 rounded-full mb-6 border border-blue-200">
           🚀 Built for Real Professionals · 18 Industries · 1 Platform
         </div>
@@ -50,13 +50,13 @@ export default function LandingPage() {
           The CRM built for<br /><span className="text-blue-600">your industry</span>
         </h1>
         <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-          PipeDesk gives real estate investors, insurance agents, mortgage brokers, solar reps, recruiters, contractors, and 12 more industries a purpose-built pipeline — not a generic tool you have to configure yourself.
+          Stop configuring generic tools. PipeDesk gives you a pipeline built exactly for how your industry works — stages, terminology, and workflows included.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/login?mode=signup" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-8 py-4 rounded-xl transition w-full sm:w-auto text-center">Start your free 14-day trial</Link>
-          <a href="#industries" className="text-slate-600 hover:text-slate-900 font-medium text-base px-8 py-4 rounded-xl border border-slate-200 hover:border-slate-300 transition w-full sm:w-auto text-center">See all 18 industries →</a>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+          <a href="#industries" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-8 py-4 rounded-xl transition w-full sm:w-auto text-center">👇 Choose your industry</a>
+          <Link href="/login?mode=signup" className="text-slate-600 hover:text-slate-900 font-medium text-base px-8 py-4 rounded-xl border border-slate-200 hover:border-slate-300 transition w-full sm:w-auto text-center">Start free trial →</Link>
         </div>
-        <p className="text-xs text-slate-400 mt-4">No credit card required · Cancel anytime</p>
+        <p className="text-xs text-slate-400">No credit card required · 14-day free trial · Cancel anytime</p>
         <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto mt-16 pt-16 border-t border-slate-100">
           {[{value:"18",label:"Industries supported"},{value:"$29",label:"Per month to start"},{value:"14",label:"Day free trial"}].map((s)=>(
             <div key={s.label}><div className="text-3xl font-bold text-slate-900">{s.value}</div><div className="text-xs text-slate-400 mt-1">{s.label}</div></div>
@@ -66,29 +66,16 @@ export default function LandingPage() {
 
       <section id="industries" className="bg-slate-50 py-24">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Built for your industry</h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto">Each pipeline uses the terminology, stages, and workflows that match how you actually work.</p>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">What industry are you in?</h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto">Click your industry to see a live demo of your pipeline — built exactly for how you work.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            {ALL_INDUSTRIES.slice(0, 3).map((ind) => (
-              <div key={ind.code} className="bg-white rounded-2xl border border-slate-200 p-8 hover:shadow-lg transition">
-                <div className={`w-12 h-12 rounded-xl ${ind.color} flex items-center justify-center text-white font-bold text-lg mb-6`}>{ind.code}</div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{ind.label}</h3>
-                <p className="text-slate-500 text-sm mb-6 leading-relaxed">{ind.desc}</p>
-                <div className="space-y-2 mb-8">{(ind.features||[]).map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-blue-500 font-bold">✓</span> {f}</div>))}</div>
-                <Link href="/login?mode=signup" className={`block text-center ${ind.color} hover:opacity-90 text-white font-semibold text-sm py-3 rounded-xl transition`}>Try {ind.label} CRM →</Link>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mb-8">
-            <p className="text-slate-600 font-semibold">Plus 15 more industry pipelines:</p>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            {ALL_INDUSTRIES.slice(3).map((ind) => (
-              <Link key={ind.code} href="/login?mode=signup" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white hover:shadow transition group">
-                <div className={`w-10 h-10 rounded-xl ${ind.color} flex items-center justify-center text-white text-xs font-bold group-hover:scale-110 transition`}>{ind.code}</div>
-                <span className="text-[10px] text-slate-500 text-center leading-tight group-hover:text-slate-800">{ind.label}</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {ALL_INDUSTRIES.map((ind) => (
+              <Link key={ind.code} href={ind.href} className="group bg-white rounded-2xl border border-slate-200 p-4 hover:border-blue-300 hover:shadow-lg transition flex flex-col items-center text-center gap-2">
+                <div className={`w-12 h-12 rounded-xl ${ind.color} flex items-center justify-center text-xl group-hover:scale-110 transition`}>{ind.emoji}</div>
+                <div className="font-semibold text-slate-800 text-sm leading-tight">{ind.label}</div>
+                <div className="text-[10px] text-slate-400 leading-tight">{ind.tagline}</div>
               </Link>
             ))}
           </div>
@@ -153,19 +140,13 @@ function PricingSection() {
           <p className="text-slate-500 text-lg mb-8">Start free for 14 days. No credit card required.</p>
           <div className="inline-flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1">
             <button onClick={()=>setAnnual(false)} className={`px-5 py-2 rounded-lg text-sm font-semibold transition ${!annual?"bg-slate-900 text-white":"text-slate-500 hover:text-slate-900"}`}>Monthly</button>
-            <button onClick={()=>setAnnual(true)} className={`px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${annual?"bg-slate-900 text-white":"text-slate-500 hover:text-slate-900"}`}>
-              Annual
-              <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Save 20%</span>
-            </button>
+            <button onClick={()=>setAnnual(true)} className={`px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${annual?"bg-slate-900 text-white":"text-slate-500 hover:text-slate-900"}`}>Annual<span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Save 20%</span></button>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
           <div className="bg-white rounded-2xl border border-slate-200 p-8">
             <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-2">Solo</div>
-            <div className="flex items-baseline gap-1 mb-1">
-              <div className="text-4xl font-bold text-slate-900">${annual?"23":"29"}</div>
-              <div className="text-lg font-normal text-slate-400">/mo</div>
-            </div>
+            <div className="flex items-baseline gap-1 mb-1"><div className="text-4xl font-bold text-slate-900">${annual?"23":"29"}</div><div className="text-lg font-normal text-slate-400">/mo</div></div>
             {annual && <div className="text-sm text-emerald-600 font-medium mb-1">$276/yr · save $72</div>}
             <div className="text-sm text-slate-400 mb-8">Perfect for independent professionals</div>
             <div className="space-y-3 mb-8">{["1 user","All 18 industry pipelines","Unlimited deals & contacts","Activity timeline","Follow-up reminders","Email support"].map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-emerald-500 font-bold">✓</span> {f}</div>))}</div>
@@ -174,10 +155,7 @@ function PricingSection() {
           <div className="bg-slate-900 rounded-2xl border border-slate-700 p-8 relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full">Most Popular</div>
             <div className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-2">Team</div>
-            <div className="flex items-baseline gap-1 mb-1">
-              <div className="text-4xl font-bold text-white">${annual?"47":"59"}</div>
-              <div className="text-lg font-normal text-slate-400">/mo</div>
-            </div>
+            <div className="flex items-baseline gap-1 mb-1"><div className="text-4xl font-bold text-white">${annual?"47":"59"}</div><div className="text-lg font-normal text-slate-400">/mo</div></div>
             {annual && <div className="text-sm text-emerald-400 font-medium mb-1">$564/yr · save $144</div>}
             <div className="text-sm text-slate-400 mb-8">For growing teams and agencies</div>
             <div className="space-y-3 mb-8">{["Up to 5 users","All 18 industry pipelines","Unlimited deals & contacts","Activity timeline","Follow-up reminders","Priority support","Team activity feed","Admin controls"].map((f)=>(<div key={f} className="flex items-center gap-2 text-sm text-slate-300"><span className="text-blue-400 font-bold">✓</span> {f}</div>))}</div>
