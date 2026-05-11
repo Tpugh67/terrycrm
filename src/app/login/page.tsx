@@ -31,9 +31,18 @@ function LoginForm() {
     setError(""); setLoading(true);
     if (!email || !password) { setError("Please enter your email and password."); setLoading(false); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); setLoading(false); return; }
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data: signUpData, error } = await supabase.auth.signUp({ email, password });
     if (error) { setError(error.message); setLoading(false); return; }
+    const industry = searchParams.get("industry") || "";
     const plan = searchParams.get("plan") || "solo";
+    if (signUpData.user) {
+      await supabase.from("profiles").upsert({
+        id: signUpData.user.id,
+        email,
+        industry,
+        plan: "trial",
+      });
+    }
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
