@@ -16,8 +16,6 @@ type Deal = {
   stage: string;
   contact_email?: string;
   next_follow_up?: string;
-  phone?: string;
-  priority?: string;
   created_at?: string;
   updated_at?: string;
 };
