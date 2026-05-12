@@ -72,7 +72,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const { data: profile } = await supabase.from("profiles").select("industry").eq("id", user.id).single();
         if (profile?.industry) setUserIndustry(profile.industry);
       }
-    });
+    }; loadUser();
   }, []);
 
   // Close mobile menu on route change
