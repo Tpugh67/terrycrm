@@ -143,7 +143,7 @@ export default function MortgagePipeline() {
   function openEdit(deal: Deal) {
     setForm({ title: deal.title || "", address: deal.address || "", arv: deal.arv || "", offer: deal.offer || "",
       seller: deal.seller || "", amount: deal.amount || "", stage: deal.stage || "Inquiry",
-      contact_email: deal.contact_email || "", next_follow_up: deal.next_follow_up || "", phone: (deal as any).phone || "", priority: (deal as any).priority || "normal" });
+      contact_email: deal.contact_email || "", next_follow_up: deal.next_follow_up || "" });
     setEditId(deal.id ?? null); setPanelOpen(true);
   }
   function closePanel() { setPanelOpen(false); setEditId(null); setForm(EMPTY_FORM); }
