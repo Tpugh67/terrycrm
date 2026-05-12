@@ -28,7 +28,7 @@ type Contact = {
   user_id?: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   company: string;
 };
 
