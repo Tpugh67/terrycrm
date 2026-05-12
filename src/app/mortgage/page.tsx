@@ -16,6 +16,8 @@ type Deal = {
   stage: string;
   contact_email?: string;
   next_follow_up?: string;
+  phone?: string;
+  priority?: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -141,7 +143,7 @@ export default function MortgagePipeline() {
   function openEdit(deal: Deal) {
     setForm({ title: deal.title || "", address: deal.address || "", arv: deal.arv || "", offer: deal.offer || "",
       seller: deal.seller || "", amount: deal.amount || "", stage: deal.stage || "Inquiry",
-      contact_email: deal.contact_email || "", next_follow_up: deal.next_follow_up || "" });
+      contact_email: deal.contact_email || "", next_follow_up: deal.next_follow_up || "", phone: (deal as any).phone || "", priority: (deal as any).priority || "normal" });
     setEditId(deal.id ?? null); setPanelOpen(true);
   }
   function closePanel() { setPanelOpen(false); setEditId(null); setForm(EMPTY_FORM); }
