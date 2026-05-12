@@ -168,6 +168,8 @@ export default function PipelinePage() {
       stage: deal.stage || "New Leads",
       contact_email: deal.contact_email || "",
       next_follow_up: deal.next_follow_up || "",
+      phone: (deal as any).phone || "",
+      priority: (deal as any).priority || "normal",
     });
     setEditId(deal.id ?? null);
     setPanelOpen(true);
