@@ -65,14 +65,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => { if (isIndustryPage) setIndustriesOpen(true); }, [pathname]);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function loadUser() {
+      const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
         setUserEmail(user.email);
         setUserInitials(user.email.slice(0, 2).toUpperCase());
         const { data: profile } = await supabase.from("profiles").select("industry").eq("id", user.id).single();
         if (profile?.industry) setUserIndustry(profile.industry);
       }
-    }; loadUser();
+    }
+    loadUser();
   }, []);
 
   // Close mobile menu on route change
