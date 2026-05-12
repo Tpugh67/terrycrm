@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
-const PUBLIC_PATHS = ["/", "/login", "/pricing"];
+const PUBLIC_PATHS = ["/", "/login", "/pricing",
+  "/real-estate", "/insurance", "/mortgage", "/auto", "/solar",
+  "/financial", "/legal", "/recruiting", "/healthcare", "/construction",
+  "/consulting", "/ecommerce", "/property-management", "/trucking",
+  "/dental", "/fitness", "/nonprofit", "/education"];
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [checked, setChecked] = useState(false);
