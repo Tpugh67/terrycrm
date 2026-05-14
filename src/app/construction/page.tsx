@@ -1,111 +1,158 @@
 "use client";
-import { getIndustryConfig } from "../../lib/industryConfig";
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../lib/supabase";
-type Deal = { id?: number; user_id?: string; title: string; address?: string; arv?: string; offer?: string; seller: string; amount?: string; stage: string; contact_email?: string; next_follow_up?: string; created_at?: string; updated_at?: string; };
-type Contact = { id?: number; user_id?: string; name: string; email: string; phone: string; company: string; };
-type Note = { id?: number; user_id?: string; deal_id: number; content: string; created_at?: string; };
-type Filter = "all" | "hot" | "overdue" | "stale";
-const STAGES = ["New Lead", "Bid Sent", "Negotiating", "Contract Signed", "In Progress", "Completed"];
-const STAGE_DOT: Record<string,string> = { "New Lead":"bg-orange-500","Bid Sent":"bg-amber-500","Negotiating":"bg-yellow-500","Contract Signed":"bg-blue-500","In Progress":"bg-violet-500","Completed":"bg-emerald-500" };
-const EMPTY_FORM = { title:"",address:"",arv:"",offer:"",seller:"",amount:"",stage:"New Lead",contact_email:"",next_follow_up:"" };
-function parseMoney(v?:string){return Number((v||"").replace(/[^0-9.-]+/g,""))||0;}
-function fmt(v?:string|number){const n=typeof v==="number"?v:parseMoney(v as string);if(!n)return "—";return n.toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0});}
-function fmtShort(n:number){if(n>=1_000_000)return `$${(n/1_000_000).toFixed(1)}M`;if(n>=1_000)return `$${Math.round(n/1_000)}K`;return fmt(n);}
-function fmtDate(d?:string){if(!d)return "";return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});}
-function fmtTime(d?:string){if(!d)return "";return new Date(d).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
-function initials(name:string){return name.split(" ").map((w)=>w[0]).join("").toUpperCase().slice(0,2);}
-function isOverdue(d?:string){if(!d)return false;return new Date(d)<new Date(new Date().toDateString());}
-function isDueToday(d?:string){if(!d)return false;return new Date(d).toDateString()===new Date().toDateString();}
-function isStale(deal:Deal){const ref=deal.updated_at||deal.created_at;if(!ref)return false;return Date.now()-new Date(ref).getTime()>7*86400*1000;}
-export default function ConstructionPipeline(){
-  const [deals,setDeals]=useState<Deal[]>([]);const [contacts,setContacts]=useState<Contact[]>([]);const [notes,setNotes]=useState<Note[]>([]);
-  const [noteInputs,setNoteInputs]=useState<Record<number,string>>({});const [search,setSearch]=useState("");const [filter,setFilter]=useState<Filter>("all");
-  const [form,setForm]=useState(EMPTY_FORM);const [editId,setEditId]=useState<number|null>(null);const [panelOpen,setPanelOpen]=useState(false);
-  const [expandedDeal,setExpandedDeal]=useState<number|null>(null);const [loading,setLoading]=useState(false);const [saving,setSaving]=useState(false);
-  async function getCurrentUser(){const{data:{user}}=await supabase.auth.getUser();return user;}
-  async function loadAll(){setLoading(true);const user=await getCurrentUser();if(!user){setLoading(false);return;}
-    const[{data:d},{data:c},{data:n}]=await Promise.all([supabase.from("deals").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),supabase.from("contacts").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false})]);
-    setDeals(d||[]);setContacts(c||[]);setNotes(n||[]);setLoading(false);}
-  useEffect(()=>{loadAll();},[]);
-  async function reloadNotes(){const user=await getCurrentUser();if(!user)return;const{data}=await supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false});if(data)setNotes(data);}
-  function openAdd(stage="New Lead"){setForm({...EMPTY_FORM,stage});setEditId(null);setPanelOpen(true);}
-  function openEdit(deal:Deal){setForm({title:deal.title||"",address:deal.address||"",arv:deal.arv||"",offer:deal.offer||"",seller:deal.seller||"",amount:deal.amount||"",stage:deal.stage||"New Lead",contact_email:deal.contact_email||"",next_follow_up:deal.next_follow_up||""});setEditId(deal.id??null);setPanelOpen(true);}
-  function closePanel(){setPanelOpen(false);setEditId(null);setForm(EMPTY_FORM);}
-  function handleChange(e:React.ChangeEvent<HTMLInputElement|HTMLSelectElement>){const{name,value}=e.target;setForm((p)=>({...p,[name]:value}));}
-  async function handleSubmit(e:React.FormEvent){e.preventDefault();if(!form.title||!form.seller)return;setSaving(true);const user=await getCurrentUser();if(!user){setSaving(false);return;}
-    if(editId!==null){const{error}=await supabase.from("deals").update({...form,next_follow_up:form.next_follow_up||null,updated_at:new Date().toISOString()}).eq("id",editId).eq("user_id",user.id);if(error){alert(error.message);setSaving(false);return;}await supabase.from("notes").insert({deal_id:editId,user_id:user.id,content:"✏️ Project updated"});}
-    else{const{error}=await supabase.from("deals").insert({...form,next_follow_up:form.next_follow_up||null,user_id:user.id});if(error){alert(error.message);setSaving(false);return;}}
-    setSaving(false);closePanel();loadAll();}
-  async function handleDelete(id?:number){if(!id||!confirm("Delete?"))return;const user=await getCurrentUser();if(!user)return;await supabase.from("deals").delete().eq("id",id).eq("user_id",user.id);loadAll();}
-  async function handleStageChange(id:number|undefined,newStage:string){if(!id)return;const user=await getCurrentUser();if(!user)return;const prev=deals.find((d)=>d.id===id);setDeals((ds)=>ds.map((d)=>d.id===id?{...d,stage:newStage}:d));const{error}=await supabase.from("deals").update({stage:newStage,updated_at:new Date().toISOString()}).eq("id",id).eq("user_id",user.id);if(error){setDeals((ds)=>ds.map((d)=>d.id===id?{...d,stage:prev?.stage||d.stage}:d));return;}await supabase.from("notes").insert({deal_id:id,user_id:user.id,content:`📋 Moved to ${newStage}`});await reloadNotes();}
-  function getContact(email?:string){return contacts.find((c)=>c.email===email);}
-  function getDealNotes(dealId?:number){return notes.filter((n)=>n.deal_id===dealId).sort((a,b)=>new Date(b.created_at||"").getTime()-new Date(a.created_at||"").getTime());}
-  async function addNote(dealId:number,contentOverride?:string){const content=(contentOverride??noteInputs[dealId]??"").trim();if(!content)return;const user=await getCurrentUser();if(!user)return;setNoteInputs((p)=>({...p,[dealId]:""}));setNotes((p)=>[{id:Date.now(),deal_id:dealId,user_id:user.id,content,created_at:new Date().toISOString()},...p]);await supabase.from("notes").insert({deal_id:dealId,content,user_id:user.id});await reloadNotes();}
-  async function quickAction(dealId:number,action:"call"|"text"|"bid"|"inspection"){const map={call:"📞 Called client",text:"💬 Sent text",bid:"📋 Sent bid",inspection:"🔍 Site inspection done"};await addNote(dealId,map[action]);}
-  const filteredDeals=useMemo(()=>{let r=deals;if(search){const q=search.toLowerCase();r=r.filter((d)=>[d.title,d.seller,d.address].join(" ").toLowerCase().includes(q));}if(filter==="hot")r=r.filter((d)=>parseMoney(d.arv)>=100000);if(filter==="overdue")r=r.filter((d)=>isOverdue(d.next_follow_up));if(filter==="stale")r=r.filter((d)=>isStale(d));return r;},[deals,search,filter]);
-  const stageDeals=(s:string)=>filteredDeals.filter((d)=>d.stage===s);
-  const stageVal=(s:string)=>stageDeals(s).reduce((sum,d)=>sum+parseMoney(d.arv),0);
-  const totalPipeline=deals.reduce((s,d)=>s+parseMoney(d.arv),0);
-  const completedRevenue=deals.filter((d)=>d.stage==="Completed").reduce((s,d)=>s+parseMoney(d.arv),0);
-  const inProgress=deals.filter((d)=>d.stage==="In Progress").length;
-  const overdueCount=deals.filter((d)=>isOverdue(d.next_follow_up)).length;
-  return(
-    <div className="min-h-screen bg-slate-50 -m-8">
-      <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3"><div className="w-7 h-7 rounded-lg bg-orange-600 flex items-center justify-center text-white text-xs font-bold">CO</div><h1 className="text-base font-bold text-slate-900">Construction Pipeline</h1><span className="text-slate-300">·</span><span className="text-sm text-slate-400">{deals.length} projects</span></div>
-        <div className="flex items-center gap-2"><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search projects..." className="text-sm border border-slate-200 rounded-lg px-3 py-2 w-48 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-orange-600"/><button onClick={()=>openAdd()} className="bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Add Project</button></div>
-      </div>
-      <div className="bg-white border-b border-slate-200 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-6">
-        {[{label:"Pipeline Value",value:fmtShort(totalPipeline),sub:`${deals.length} active projects`},{label:"Completed Revenue",value:fmtShort(completedRevenue),sub:"finished projects",green:true},{label:"In Progress",value:String(inProgress),sub:"active job sites",green:inProgress>0},{label:"Deadlines Due",value:String(overdueCount),sub:overdueCount>0?"overdue":"all clear",red:overdueCount>0}].map((s)=>(<div key={s.label}><div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{s.label}</div><div className={`text-2xl font-bold mt-1 ${(s as any).red?"text-red-500":(s as any).green?"text-emerald-600":"text-slate-900"}`}>{s.value}</div><div className={`text-xs mt-0.5 ${(s as any).red?"text-red-400":"text-slate-400"}`}>{s.sub}</div></div>))}
-      </div>
-      <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
-        {(["all","hot","overdue","stale"] as Filter[]).map((f)=>(<button key={f} onClick={()=>setFilter(f)} className={`text-xs px-3 py-1.5 rounded-full border font-medium transition ${filter===f?"bg-orange-600 text-white border-orange-600":"bg-white text-slate-500 border-slate-200"}`}>{f==="all"&&"All projects"}{f==="hot"&&"🏗️ Large ($100k+)"}{f==="overdue"&&"⚠️ Overdue"}{f==="stale"&&"⏳ Stale 7d+"}</button>))}
-        {filter!=="all"&&<button onClick={()=>setFilter("all")} className="text-xs text-slate-400 underline">Clear</button>}
-      </div>
-      {loading?<div className="flex items-center justify-center h-64 text-slate-400 text-sm">Loading...</div>:(
-        <div className="px-6 pb-12 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4">
-          {STAGES.map((stage)=>{const items=stageDeals(stage);const val=stageVal(stage);return(
-            <div key={stage} className="flex flex-col">
-              <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><div className={`w-2.5 h-2.5 rounded-full ${STAGE_DOT[stage]}`}/><span className="text-xs font-bold text-slate-600 uppercase tracking-wide">{stage}</span><span className="bg-slate-200 text-slate-600 text-[10px] font-bold rounded-full px-2 py-0.5">{items.length}</span></div>{val>0&&<span className="text-xs text-slate-400">{fmtShort(val)}</span>}</div>
-              <div className="flex flex-col gap-3">
-                {items.length===0&&<div className="border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center h-20 text-xs text-slate-400">No projects</div>}
-                {items.map((d)=>{const contact=getContact(d.contact_email);const hot=parseMoney(d.arv)>=100000;const stale=isStale(d);const overdue=isOverdue(d.next_follow_up);const dueToday=isDueToday(d.next_follow_up);const expanded=expandedDeal===d.id;const dealNotes=getDealNotes(d.id);return(
-                  <div key={d.id} className={`bg-white rounded-xl border text-sm shadow-sm hover:shadow-md transition-all ${hot?"border-orange-200":"border-slate-200"}`}>
-                    <div className="p-4 cursor-pointer select-none" onClick={()=>setExpandedDeal(expanded?null:d.id!)}>
-                      <div className="flex flex-wrap gap-1 mb-2">{hot&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 font-semibold">🏗️ Large Project</span>}{stale&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">⏳ Stale</span>}{overdue&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">⚠️ Overdue</span>}</div>
-                      <div className="font-bold text-slate-900 leading-tight">{d.title}</div>
-                      {d.address&&<div className="text-xs text-slate-400 mt-0.5 truncate">{d.address}</div>}
-                      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">{[["Contract Value",fmt(d.arv)],["Project Type",d.offer||"—"],["Profit",fmt(d.amount)],["Client",d.seller]].map(([label,val])=>(<div key={label}><div className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">{label}</div><div className="text-xs font-bold text-slate-800 truncate">{val}</div></div>))}</div>
-                      {d.next_follow_up&&<div className={`mt-2 text-xs font-medium ${overdue?"text-red-500":dueToday?"text-amber-500":"text-slate-400"}`}>{overdue?"⚠️ Deadline overdue · ":dueToday?"📅 Due today · ":"📅 "}{fmtDate(d.next_follow_up)}</div>}
-                      <div className="mt-3 flex items-center justify-between">{contact?(<div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-orange-100 text-orange-700 text-[9px] font-bold flex items-center justify-center">{initials(contact.name)}</div><div className="text-xs font-semibold text-slate-700">{contact.name}</div></div>):<span className="text-xs text-slate-400">No contact</span>}<span className="text-[10px] text-slate-400">{dealNotes.length>0?`${dealNotes.length} notes · `:""}{expanded?"▲":"▼"}</span></div>
-                    </div>
-                    {expanded&&(<div className="border-t border-slate-100 px-4 pb-4 pt-3">
-                      <select value={d.stage} onChange={(e)=>handleStageChange(d.id,e.target.value)} className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white mb-3">{STAGES.map((s)=><option key={s}>{s}</option>)}</select>
-                      <div className="grid grid-cols-2 gap-2 mb-4">{(["call","text","bid","inspection"] as const).map((a)=>(<button key={a} onClick={()=>quickAction(d.id!,a)} className="text-[11px] py-1.5 border border-slate-200 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium">{a==="call"&&"📞 Call"}{a==="text"&&"💬 Text"}{a==="bid"&&"📋 Bid"}{a==="inspection"&&"🔍 Inspect"}</button>))}</div>
-                      <div className="relative pl-4 space-y-2 mb-3 max-h-44 overflow-y-auto"><div className="absolute left-1.5 top-0 bottom-0 w-px bg-slate-100"/>{dealNotes.length===0?<div className="text-xs text-slate-400 italic">No activity yet</div>:dealNotes.map((n)=>(<div key={n.id} className="relative"><div className="absolute -left-[11px] top-2 h-2 w-2 rounded-full bg-slate-300"/><div className="bg-slate-50 rounded-lg px-3 py-2"><div className="text-xs text-slate-700">{n.content}</div><div className="text-[10px] text-slate-400 mt-0.5">{fmtTime(n.created_at)}</div></div></div>))}</div>
-                      <input value={noteInputs[d.id!]||""} onChange={(e)=>setNoteInputs((p)=>({...p,[d.id!]:e.target.value}))} onKeyDown={(e)=>{if(e.key==="Enter"){e.preventDefault();addNote(d.id!);}}} placeholder="Add note... (Enter to save)" className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2"/>
-                      <div className="flex gap-4 mt-3"><button onClick={()=>{openEdit(d);setExpandedDeal(null);}} className="text-xs text-orange-600 font-semibold">Edit</button><button onClick={()=>handleDelete(d.id)} className="text-xs text-red-500 font-semibold">Delete</button></div>
-                    </div>)}
-                  </div>);})}
-                <button onClick={()=>openAdd(stage)} className="text-xs text-slate-400 hover:text-orange-600 border-2 border-dashed border-slate-200 hover:border-orange-300 rounded-xl py-3 transition">+ Add project</button>
+import Link from "next/link";
+import { useState } from "react";
+
+const DEMO_DEALS = [
+  { id: 1, title: "Office Renovation - 5th Ave", client: "ABC Corp", val: "$185,000", cost: "$75,000", stage: "Lead", hot: true, follow: "Overdue" },
+  { id: 2, title: "Residential Addition", client: "Smith Family", val: "$92,000", cost: "$38,000", stage: "Estimate", hot: false, follow: "Today" },
+  { id: 3, title: "Retail Buildout", client: "XYZ Retail", val: "$320,000", cost: "$140,000", stage: "Proposal Sent", hot: true, follow: "Tomorrow" },
+  { id: 4, title: "Kitchen Remodel", client: "Johnson Home", val: "$65,000", cost: "$28,000", stage: "In Progress", hot: false, follow: "Next week" },
+  { id: 5, title: "Warehouse Expansion", client: "Logistics Co", val: "$540,000", cost: "$220,000", stage: "Completed", hot: false, follow: "Done" },
+];
+
+const STAGES = ["Lead", "Estimate", "Proposal Sent", "In Progress", "Completed"];
+const STAGE_COLORS: Record<string, string> = {
+  "Lead": "bg-slate-100 text-slate-700",
+  "Estimate": "bg-blue-100 text-blue-700",
+  "Proposal Sent": "bg-yellow-100 text-yellow-700",
+  "In Progress": "bg-orange-100 text-orange-700",
+  "Completed": "bg-emerald-100 text-emerald-700",
+};
+
+export default function ConstructionDemoPage() {
+  const [activeStage, setActiveStage] = useState("All");
+  const filtered = activeStage === "All" ? DEMO_DEALS : DEMO_DEALS.filter(d => d.stage === activeStage);
+  const totalVal = DEMO_DEALS.reduce((s, d) => s + Number(d.val.replace(/[^0-9]/g, "")), 0);
+  const totalProfit = DEMO_DEALS.reduce((s, d) => s + Number(d.val.replace(/[^0-9]/g, "")) - Number(d.cost.replace(/[^0-9]/g, "")), 0);
+  const hotDeals = DEMO_DEALS.filter(d => d.hot).length;
+
+  return (
+    <div className="min-h-screen bg-white">
+      <nav className="border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 bg-white z-50">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">PD</div>
+          <span className="text-lg font-bold text-slate-900 tracking-tight">PipeDesk</span>
+        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-sm text-slate-500 hover:text-slate-900 transition">← All industries</Link>
+          <Link href="/login" className="text-sm text-slate-600 hover:text-slate-900 font-medium">Log in</Link>
+          <Link href="/login?mode=signup&industry=construction" className="bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Start free trial</Link>
+        </div>
+      </nav>
+
+      <section className="bg-slate-900 text-white py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-orange-600/20 text-orange-400 text-xs font-semibold px-4 py-2 rounded-full mb-6 border border-orange-600/30">🏗️ Contractors & Construction Companies</div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Your project pipeline,<br />built for contractors</h1>
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10">Track bids from estimate to completed, manage contracts, and grow your construction business. Built for contractors — not generic tools.</p>
+          <Link href="/login?mode=signup&industry=construction" className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-bold text-lg px-10 py-4 rounded-xl transition">Start your free 14-day trial →</Link>
+          <p className="text-sm text-slate-500 mt-4">No credit card required · Set up in 2 minutes</p>
+        </div>
+      </section>
+
+      <section className="py-16 px-6 bg-slate-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="inline-block bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full mb-3">LIVE DEMO — INTERACTIVE</div>
+            <h2 className="text-2xl font-bold text-slate-900">This is what your pipeline looks like</h2>
+            <p className="text-slate-500 mt-2">Click the stage filters — fully interactive</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { label: "Active Projects", value: String(DEMO_DEALS.length), icon: "🏗️", color: "text-slate-900" },
+              { label: "Pipeline Value", value: `$${(totalVal/1000).toFixed(0)}K`, icon: "💰", color: "text-orange-600" },
+              { label: "Total Profit", value: `$${(totalProfit/1000).toFixed(0)}K`, icon: "📈", color: "text-emerald-600" },
+              { label: "Hot Bids", value: String(hotDeals), icon: "🔥", color: "text-red-500" },
+            ].map((s) => (
+              <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div className="text-2xl mb-2">{s.icon}</div>
+                <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+                <div className="text-xs text-slate-400 mt-1">{s.label}</div>
               </div>
-            </div>);})}
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 mb-6">
+            {["All", ...STAGES].map((stage) => (
+              <button key={stage} onClick={() => setActiveStage(stage)} className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeStage === stage ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"}`}>{stage}</button>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {filtered.map((deal) => (
+              <div key={deal.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      {deal.hot && <span className="text-xs bg-red-100 text-red-600 font-bold px-2 py-0.5 rounded-full">🔥 HOT BID</span>}
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STAGE_COLORS[deal.stage]}`}>{deal.stage}</span>
+                    </div>
+                    <div className="font-bold text-slate-900 text-lg">{deal.title}</div>
+                    <div className="text-sm text-slate-500">Client: {deal.client}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-slate-400">Contract Value</div>
+                    <div className="text-2xl font-bold text-orange-600">{deal.val}</div>
+                    <div className="text-xs text-emerald-600 mt-1">Profit: ${((Number(deal.val.replace(/[^0-9]/g,"")) - Number(deal.cost.replace(/[^0-9]/g,"")))/1000).toFixed(0)}K</div>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div className={`text-xs font-medium ${deal.follow === "Overdue" ? "text-red-500" : "text-slate-400"}`}>
+                    {deal.follow === "Overdue" ? "⚠️ Follow-up overdue" : `📅 Follow-up: ${deal.follow}`}
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition">📞 Log Call</button>
+                    <button className="text-xs bg-orange-50 hover:bg-orange-100 text-orange-600 px-3 py-1.5 rounded-lg transition">📋 Send Estimate</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      )}
-      {panelOpen&&(<div className="fixed inset-0 z-50 flex"><div className="flex-1 bg-black/30" onClick={closePanel}/>
-        <div className="w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto flex flex-col">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white"><div className="flex items-center gap-2"><div className="w-6 h-6 rounded bg-orange-600 flex items-center justify-center text-white text-[10px] font-bold">CO</div><h2 className="text-base font-bold text-slate-900">{editId!==null?"Edit Project":"New Construction Project"}</h2></div><button onClick={closePanel} className="text-slate-400 text-2xl">✕</button></div>
-          <form onSubmit={handleSubmit} className="flex-1 px-6 py-5 space-y-4">
-            {[{label:"Project Name *",name:"title",placeholder:"e.g. Johnson Kitchen Remodel",required:true},{label:"Client Name *",name:"seller",placeholder:"Client full name",required:true},{label:"Project Address",name:"address",placeholder:"123 Main St, City, State"}].map((f)=>(<div key={f.name}><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">{f.label}</label><input name={f.name} value={(form as any)[f.name]} onChange={handleChange} required={f.required} placeholder={f.placeholder} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-600"/></div>))}
-            <div className="grid grid-cols-2 gap-3"><div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Contract Value ($)</label><input name="arv" value={form.arv} onChange={handleChange} placeholder="e.g. 85000" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-600"/></div><div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Project Type</label><input name="offer" value={form.offer} onChange={handleChange} placeholder="e.g. Remodel, New Build" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-600"/></div></div>
-            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Profit / Margin ($)</label><input name="amount" value={form.amount} onChange={handleChange} placeholder="e.g. 25000" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-600"/></div>
-            <div className="grid grid-cols-2 gap-3"><div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Stage</label><select name="stage" value={form.stage} onChange={handleChange} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white">{STAGES.map((s)=><option key={s}>{s}</option>)}</select></div><div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Deadline / Follow-up</label><input type="date" name="next_follow_up" value={form.next_follow_up} onChange={handleChange} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"/></div></div>
-            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Link Contact</label><select name="contact_email" value={form.contact_email} onChange={handleChange} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"><option value="">No contact</option>{contacts.map((c)=><option key={c.email} value={c.email}>{c.name} — {c.phone}</option>)}</select></div>
-            <div className="flex gap-3 pt-2 pb-6"><button type="submit" disabled={saving} className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold text-sm py-3 rounded-lg">{saving?"Saving...":editId!==null?"Update Project":"Create Project"}</button><button type="button" onClick={closePanel} className="px-5 border border-slate-200 text-slate-600 text-sm py-3 rounded-lg">Cancel</button></div>
-          </form>
+      </section>
+
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-slate-900 text-center mb-12">Built for contractors, not generic tools</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              { icon: "🏗️", title: "Project Pipeline", desc: "Track every project from first lead to completed with construction-specific stages." },
+              { icon: "💰", title: "Bid & Contract Tracking", desc: "Log bid amounts, material costs, and contract values on every project." },
+              { icon: "📅", title: "Project Timeline", desc: "Set start dates and milestones so projects stay on schedule." },
+              { icon: "📊", title: "Revenue Dashboard", desc: "See total contracted revenue, projects in progress, and completed work." },
+              { icon: "🔥", title: "Big Job Alerts", desc: "High-value projects get flagged so you prioritize the right bids." },
+              { icon: "📞", title: "Client Log", desc: "Log every site visit, call, and change order with one click." },
+            ].map((f) => (
+              <div key={f.title} className="flex gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="text-3xl">{f.icon}</div>
+                <div>
+                  <div className="font-bold text-slate-900 mb-1">{f.title}</div>
+                  <div className="text-sm text-slate-500 leading-relaxed">{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>)}
+      </section>
+
+      <section className="bg-slate-900 py-20 px-6">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Ready to win more bids?</h2>
+          <p className="text-slate-400 text-lg mb-8">Start your free 14-day trial. No credit card required.</p>
+          <Link href="/login?mode=signup&industry=construction" className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-bold text-lg px-10 py-4 rounded-xl transition">Start free trial →</Link>
+          <div className="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
+            <span>✓ 14 days free</span><span>✓ No credit card</span><span>✓ Cancel anytime</span>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-slate-800 bg-slate-900 py-8 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">PD</div>
+            <span className="font-bold text-white">PipeDesk</span>
+          </div>
+          <Link href="/" className="text-sm text-slate-500 hover:text-white transition">← See all 18 industries</Link>
+        </div>
+      </footer>
     </div>
   );
 }
