@@ -1,111 +1,186 @@
 "use client";
-import { getIndustryConfig } from "../../lib/industryConfig";
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../lib/supabase";
-type Deal = { id?: number; user_id?: string; title: string; address?: string; arv?: string; offer?: string; seller: string; amount?: string; stage: string; contact_email?: string; next_follow_up?: string; created_at?: string; updated_at?: string; };
-type Contact = { id?: number; user_id?: string; name: string; email: string; phone: string; company: string; };
-type Note = { id?: number; user_id?: string; deal_id: number; content: string; created_at?: string; };
-type Filter = "all" | "hot" | "overdue" | "stale";
-const STAGES = ["Inquiry", "Showing", "Application", "Screening", "Lease Signed", "Active Tenant", "Vacating"];
-const STAGE_DOT: Record<string,string> = { "Inquiry":"bg-blue-500","Showing":"bg-violet-500","Application":"bg-amber-500","Screening":"bg-orange-500","Lease Signed":"bg-pink-500","Active Tenant":"bg-emerald-500","Vacating":"bg-red-400" };
-const EMPTY_FORM = { title:"",address:"",arv:"",offer:"",seller:"",amount:"",stage:"Inquiry",contact_email:"",next_follow_up:"" };
-function parseMoney(v?:string){return Number((v||"").replace(/[^0-9.-]+/g,""))||0;}
-function fmt(v?:string|number){const n=typeof v==="number"?v:parseMoney(v as string);if(!n)return "—";return n.toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0});}
-function fmtShort(n:number){if(n>=1_000_000)return `$${(n/1_000_000).toFixed(1)}M`;if(n>=1_000)return `$${Math.round(n/1_000)}K`;return fmt(n);}
-function fmtDate(d?:string){if(!d)return "";return new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});}
-function fmtTime(d?:string){if(!d)return "";return new Date(d).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
-function initials(name:string){return name.split(" ").map((w)=>w[0]).join("").toUpperCase().slice(0,2);}
-function isOverdue(d?:string){if(!d)return false;return new Date(d)<new Date(new Date().toDateString());}
-function isDueToday(d?:string){if(!d)return false;return new Date(d).toDateString()===new Date().toDateString();}
-function isStale(deal:Deal){const ref=deal.updated_at||deal.created_at;if(!ref)return false;return Date.now()-new Date(ref).getTime()>7*86400*1000;}
-export default function PropertyManagementPipeline(){
-  const [deals,setDeals]=useState<Deal[]>([]);const [contacts,setContacts]=useState<Contact[]>([]);const [notes,setNotes]=useState<Note[]>([]);
-  const [noteInputs,setNoteInputs]=useState<Record<number,string>>({});const [search,setSearch]=useState("");const [filter,setFilter]=useState<Filter>("all");
-  const [form,setForm]=useState(EMPTY_FORM);const [editId,setEditId]=useState<number|null>(null);const [panelOpen,setPanelOpen]=useState(false);
-  const [expandedDeal,setExpandedDeal]=useState<number|null>(null);const [loading,setLoading]=useState(false);const [saving,setSaving]=useState(false);
-  async function getCurrentUser(){const{data:{user}}=await supabase.auth.getUser();return user;}
-  async function loadAll(){setLoading(true);const user=await getCurrentUser();if(!user){setLoading(false);return;}
-    const[{data:d},{data:c},{data:n}]=await Promise.all([supabase.from("deals").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),supabase.from("contacts").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false})]);
-    setDeals(d||[]);setContacts(c||[]);setNotes(n||[]);setLoading(false);}
-  useEffect(()=>{loadAll();},[]);
-  async function reloadNotes(){const user=await getCurrentUser();if(!user)return;const{data}=await supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false});if(data)setNotes(data);}
-  function openAdd(stage="Inquiry"){setForm({...EMPTY_FORM,stage});setEditId(null);setPanelOpen(true);}
-  function openEdit(deal:Deal){setForm({title:deal.title||"",address:deal.address||"",arv:deal.arv||"",offer:deal.offer||"",seller:deal.seller||"",amount:deal.amount||"",stage:deal.stage||"Inquiry",contact_email:deal.contact_email||"",next_follow_up:deal.next_follow_up||""});setEditId(deal.id??null);setPanelOpen(true);}
-  function closePanel(){setPanelOpen(false);setEditId(null);setForm(EMPTY_FORM);}
-  function handleChange(e:React.ChangeEvent<HTMLInputElement|HTMLSelectElement>){const{name,value}=e.target;setForm((p)=>({...p,[name]:value}));}
-  async function handleSubmit(e:React.FormEvent){e.preventDefault();if(!form.title||!form.seller)return;setSaving(true);const user=await getCurrentUser();if(!user){setSaving(false);return;}
-    if(editId!==null){const{error}=await supabase.from("deals").update({...form,next_follow_up:form.next_follow_up||null,updated_at:new Date().toISOString()}).eq("id",editId).eq("user_id",user.id);if(error){alert(error.message);setSaving(false);return;}await supabase.from("notes").insert({deal_id:editId,user_id:user.id,content:"✏️ Tenant updated"});}
-    else{const{error}=await supabase.from("deals").insert({...form,next_follow_up:form.next_follow_up||null,user_id:user.id});if(error){alert(error.message);setSaving(false);return;}}
-    setSaving(false);closePanel();loadAll();}
-  async function handleDelete(id?:number){if(!id||!confirm("Delete?"))return;const user=await getCurrentUser();if(!user)return;await supabase.from("deals").delete().eq("id",id).eq("user_id",user.id);loadAll();}
-  async function handleStageChange(id:number|undefined,newStage:string){if(!id)return;const user=await getCurrentUser();if(!user)return;const prev=deals.find((d)=>d.id===id);setDeals((ds)=>ds.map((d)=>d.id===id?{...d,stage:newStage}:d));const{error}=await supabase.from("deals").update({stage:newStage,updated_at:new Date().toISOString()}).eq("id",id).eq("user_id",user.id);if(error){setDeals((ds)=>ds.map((d)=>d.id===id?{...d,stage:prev?.stage||d.stage}:d));return;}await supabase.from("notes").insert({deal_id:id,user_id:user.id,content:`📋 Moved to ${newStage}`});await reloadNotes();}
-  function getContact(email?:string){return contacts.find((c)=>c.email===email);}
-  function getDealNotes(dealId?:number){return notes.filter((n)=>n.deal_id===dealId).sort((a,b)=>new Date(b.created_at||"").getTime()-new Date(a.created_at||"").getTime());}
-  async function addNote(dealId:number,contentOverride?:string){const content=(contentOverride??noteInputs[dealId]??"").trim();if(!content)return;const user=await getCurrentUser();if(!user)return;setNoteInputs((p)=>({...p,[dealId]:""}));setNotes((p)=>[{id:Date.now(),deal_id:dealId,user_id:user.id,content,created_at:new Date().toISOString()},...p]);await supabase.from("notes").insert({deal_id:dealId,content,user_id:user.id});await reloadNotes();}
-  async function quickAction(dealId:number,action:"call"|"text"|"showing"|"maintenance"){const map={call:"📞 Called tenant",text:"💬 Sent text",showing:"🏠 Showing scheduled",maintenance:"🔧 Maintenance request logged"};await addNote(dealId,map[action]);}
-  const filteredDeals=useMemo(()=>{let r=deals;if(search){const q=search.toLowerCase();r=r.filter((d)=>[d.title,d.seller,d.address].join(" ").toLowerCase().includes(q));}if(filter==="hot")r=r.filter((d)=>parseMoney(d.amount)>=3000);if(filter==="overdue")r=r.filter((d)=>isOverdue(d.next_follow_up));if(filter==="stale")r=r.filter((d)=>isStale(d));return r;},[deals,search,filter]);
-  const stageDeals=(s:string)=>filteredDeals.filter((d)=>d.stage===s);
-  const stageVal=(s:string)=>stageDeals(s).reduce((sum,d)=>sum+parseMoney(d.amount),0);
-  const totalRent=deals.filter((d)=>d.stage==="Active Tenant").reduce((s,d)=>s+parseMoney(d.amount),0);
-  const totalUnits=deals.filter((d)=>d.stage==="Active Tenant").length;
-  const vacancies=deals.filter((d)=>["Inquiry","Showing","Application","Screening"].includes(d.stage)).length;
-  const overdueCount=deals.filter((d)=>isOverdue(d.next_follow_up)).length;
-  return(
-    <div className="min-h-screen bg-slate-50 -m-8">
-      <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3"><div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center text-white text-xs font-bold">PM</div><h1 className="text-base font-bold text-slate-900">Property Management Pipeline</h1><span className="text-slate-300">·</span><span className="text-sm text-slate-400">{deals.length} units</span></div>
-        <div className="flex items-center gap-2"><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search units..." className="text-sm border border-slate-200 rounded-lg px-3 py-2 w-48 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-600"/><button onClick={()=>openAdd()} className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Add Unit</button></div>
-      </div>
-      <div className="bg-white border-b border-slate-200 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-6">
-        {[{label:"Monthly Rent Roll",value:fmtShort(totalRent),sub:`${totalUnits} active tenants`,green:true},{label:"Active Units",value:String(totalUnits),sub:"occupied units",green:totalUnits>0},{label:"Vacancies",value:String(vacancies),sub:"units in pipeline",red:vacancies>0},{label:"Follow-ups Due",value:String(overdueCount),sub:overdueCount>0?"overdue":"all clear",red:overdueCount>0}].map((s)=>(<div key={s.label}><div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{s.label}</div><div className={`text-2xl font-bold mt-1 ${(s as any).red?"text-red-500":(s as any).green?"text-emerald-600":"text-slate-900"}`}>{s.value}</div><div className={`text-xs mt-0.5 ${(s as any).red?"text-red-400":"text-slate-400"}`}>{s.sub}</div></div>))}
-      </div>
-      <div className="px-6 py-3 flex items-center gap-2 flex-wrap">
-        {(["all","hot","overdue","stale"] as Filter[]).map((f)=>(<button key={f} onClick={()=>setFilter(f)} className={`text-xs px-3 py-1.5 rounded-full border font-medium transition ${filter===f?"bg-teal-600 text-white border-teal-600":"bg-white text-slate-500 border-slate-200"}`}>{f==="all"&&"All units"}{f==="hot"&&"🏠 High rent ($3k+)"}{f==="overdue"&&"⚠️ Overdue"}{f==="stale"&&"⏳ Stale 7d+"}</button>))}
-        {filter!=="all"&&<button onClick={()=>setFilter("all")} className="text-xs text-slate-400 underline">Clear</button>}
-      </div>
-      {loading?<div className="flex items-center justify-center h-64 text-slate-400 text-sm">Loading...</div>:(
-        <div className="px-6 pb-12 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-7 gap-4">
-          {STAGES.map((stage)=>{const items=stageDeals(stage);const val=stageVal(stage);return(
-            <div key={stage} className="flex flex-col">
-              <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><div className={`w-2.5 h-2.5 rounded-full ${STAGE_DOT[stage]}`}/><span className="text-xs font-bold text-slate-600 uppercase tracking-wide">{stage}</span><span className="bg-slate-200 text-slate-600 text-[10px] font-bold rounded-full px-2 py-0.5">{items.length}</span></div>{val>0&&<span className="text-xs text-slate-400">{fmtShort(val)}</span>}</div>
-              <div className="flex flex-col gap-3">
-                {items.length===0&&<div className="border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center h-20 text-xs text-slate-400">No units</div>}
-                {items.map((d)=>{const contact=getContact(d.contact_email);const hot=parseMoney(d.amount)>=3000;const stale=isStale(d);const overdue=isOverdue(d.next_follow_up);const dueToday=isDueToday(d.next_follow_up);const expanded=expandedDeal===d.id;const dealNotes=getDealNotes(d.id);return(
-                  <div key={d.id} className={`bg-white rounded-xl border text-sm shadow-sm hover:shadow-md transition-all ${hot?"border-teal-200":"border-slate-200"}`}>
-                    <div className="p-4 cursor-pointer select-none" onClick={()=>setExpandedDeal(expanded?null:d.id!)}>
-                      <div className="flex flex-wrap gap-1 mb-2">{hot&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-semibold">🏠 High Rent</span>}{stale&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">⏳ Stale</span>}{overdue&&<span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">⚠️ Overdue</span>}</div>
-                      <div className="font-bold text-slate-900 leading-tight">{d.title}</div>
-                      {d.address&&<div className="text-xs text-slate-400 mt-0.5 truncate">{d.address}</div>}
-                      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">{[["Monthly Rent",fmt(d.amount)],["Unit Type",d.offer||"—"],["Market Rent",fmt(d.arv)],["Tenant",d.seller]].map(([label,val])=>(<div key={label}><div className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">{label}</div><div className="text-xs font-bold text-slate-800 truncate">{val}</div></div>))}</div>
-                      {d.next_follow_up&&<div className={`mt-2 text-xs font-medium ${overdue?"text-red-500":dueToday?"text-amber-500":"text-slate-400"}`}>{overdue?"⚠️ Lease overdue · ":dueToday?"📅 Due today · ":"📅 "}{fmtDate(d.next_follow_up)}</div>}
-                      <div className="mt-3 flex items-center justify-between">{contact?(<div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 text-[9px] font-bold flex items-center justify-center">{initials(contact.name)}</div><div className="text-xs font-semibold text-slate-700">{contact.name}</div></div>):<span className="text-xs text-slate-400">No contact</span>}<span className="text-[10px] text-slate-400">{dealNotes.length>0?`${dealNotes.length} notes · `:""}{expanded?"▲":"▼"}</span></div>
-                    </div>
-                    {expanded&&(<div className="border-t border-slate-100 px-4 pb-4 pt-3">
-                      <select value={d.stage} onChange={(e)=>handleStageChange(d.id,e.target.value)} className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white mb-3">{STAGES.map((s)=><option key={s}>{s}</option>)}</select>
-                      <div className="grid grid-cols-2 gap-2 mb-4">{(["call","text","showing","maintenance"] as const).map((a)=>(<button key={a} onClick={()=>quickAction(d.id!,a)} className="text-[11px] py-1.5 border border-slate-200 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium">{a==="call"&&"📞 Call"}{a==="text"&&"💬 Text"}{a==="showing"&&"🏠 Showing"}{a==="maintenance"&&"🔧 Maintenance"}</button>))}</div>
-                      <div className="relative pl-4 space-y-2 mb-3 max-h-44 overflow-y-auto"><div className="absolute left-1.5 top-0 bottom-0 w-px bg-slate-100"/>{dealNotes.length===0?<div className="text-xs text-slate-400 italic">No activity yet</div>:dealNotes.map((n)=>(<div key={n.id} className="relative"><div className="absolute -left-[11px] top-2 h-2 w-2 rounded-full bg-slate-300"/><div className="bg-slate-50 rounded-lg px-3 py-2"><div className="text-xs text-slate-700">{n.content}</div><div className="text-[10px] text-slate-400 mt-0.5">{fmtTime(n.created_at)}</div></div></div>))}</div>
-                      <input value={noteInputs[d.id!]||""} onChange={(e)=>setNoteInputs((p)=>({...p,[d.id!]:e.target.value}))} onKeyDown={(e)=>{if(e.key==="Enter"){e.preventDefault();addNote(d.id!);}}} placeholder="Add note... (Enter to save)" className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2"/>
-                      <div className="flex gap-4 mt-3"><button onClick={()=>{openEdit(d);setExpandedDeal(null);}} className="text-xs text-teal-600 font-semibold">Edit</button><button onClick={()=>handleDelete(d.id)} className="text-xs text-red-500 font-semibold">Delete</button></div>
-                    </div>)}
-                  </div>);})}
-                <button onClick={()=>openAdd(stage)} className="text-xs text-slate-400 hover:text-teal-600 border-2 border-dashed border-slate-200 hover:border-teal-300 rounded-xl py-3 transition">+ Add unit</button>
+import Link from "next/link";
+import { useState } from "react";
+
+const DEMO_DEALS = [
+  { id: 1, title: "3BR Apartment - Oak St", client: "John Smith", val: "$2,500/mo", val2: "Deposit: $2,500", stage: "Inquiry", hot: true, follow: "Overdue" },
+  { id: 2, title: "Studio - Downtown", client: "Sarah Davis", val: "$1,800/mo", val2: "Deposit: $1,800", stage: "Showing", hot: false, follow: "Today" },
+  { id: 3, title: "2BR Condo - Maple Ave", client: "Mike Johnson", val: "$2,200/mo", val2: "Deposit: $2,200", stage: "Application", hot: true, follow: "Tomorrow" },
+  { id: 4, title: "Office Space - Main St", client: "ABC Corp", val: "$4,500/mo", val2: "Deposit: $9,000", stage: "Screening", hot: false, follow: "Next week" },
+  { id: 5, title: "1BR - Park View", client: "Lisa Chen", val: "$1,600/mo", val2: "Deposit: $1,600", stage: "Active Tenant", hot: false, follow: "Done" },
+
+];
+
+const STAGES = ["Inquiry", "Showing", "Application", "Screening", "Active Tenant"];
+const STAGE_COLORS: Record<string, string> = {
+  "Inquiry": "bg-slate-100 text-slate-700",
+  "Showing": "bg-blue-100 text-blue-700",
+  "Application": "bg-yellow-100 text-yellow-700",
+  "Screening": "bg-orange-100 text-orange-700",
+  "Active Tenant": "bg-emerald-100 text-emerald-700",
+};
+
+export default function PropertyManagementDemoPage() {
+  const [activeStage, setActiveStage] = useState("All");
+  const filtered = activeStage === "All" ? DEMO_DEALS : DEMO_DEALS.filter(d => d.stage === activeStage);
+  const totalVal = DEMO_DEALS.reduce((s, d) => s + Number(d.val.replace(/[^0-9]/g, "")), 0);
+  const hotDeals = DEMO_DEALS.filter(d => d.hot).length;
+
+  return (
+    <div className="min-h-screen bg-white">
+      <nav className="border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 bg-white z-50">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">PD</div>
+          <span className="text-lg font-bold text-slate-900 tracking-tight">PipeDesk</span>
+        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-sm text-slate-500 hover:text-slate-900 transition">← All industries</Link>
+          <Link href="/login" className="text-sm text-slate-600 hover:text-slate-900 font-medium">Log in</Link>
+          <Link href="/login?mode=signup&industry=property-management" className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Start free trial</Link>
+        </div>
+      </nav>
+
+      <section className="bg-slate-900 text-white py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-xs font-semibold px-4 py-2 rounded-full mb-6 border border-white/20">🏢 Property Managers & Landlords</div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Your tenant pipeline,
+built for property managers</h1>
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10">Track tenants from inquiry to active lease, manage renewals, and grow your portfolio.</p>
+          <Link href="/login?mode=signup&industry=property-management" className="inline-block bg-teal-600 hover:bg-teal-700 text-white font-bold text-lg px-10 py-4 rounded-xl transition">Start your free 14-day trial →</Link>
+          <p className="text-sm text-slate-500 mt-4">No credit card required · Set up in 2 minutes</p>
+        </div>
+      </section>
+
+      <section className="py-16 px-6 bg-slate-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="inline-block bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1 rounded-full mb-3">LIVE DEMO — INTERACTIVE</div>
+            <h2 className="text-2xl font-bold text-slate-900">This is what your pipeline looks like</h2>
+            <p className="text-slate-500 mt-2">Click the stage filters — fully interactive</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { label: "Active Tenants", value: String(DEMO_DEALS.length), icon: "🏢", color: "text-slate-900" },
+              { label: "Pipeline Value", value: `$${(totalVal/1000).toFixed(0)}K`, icon: "💰", color: "text-teal-600" },
+              { label: "Hot Prospects", value: String(hotDeals), icon: "🔥", color: "text-red-500" },
+              { label: "Overdue Follow-ups", value: "1", icon: "⚠️", color: "text-red-500" },
+            ].map((s) => (
+              <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div className="text-2xl mb-2">{s.icon}</div>
+                <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+                <div className="text-xs text-slate-400 mt-1">{s.label}</div>
               </div>
-            </div>);})}
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 mb-6">
+            {["All", ...STAGES].map((stage) => (
+              <button key={stage} onClick={() => setActiveStage(stage)} className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeStage === stage ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"}`}>{stage}</button>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {filtered.map((deal) => (
+              <div key={deal.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      {deal.hot && <span className="text-xs bg-red-100 text-red-600 font-bold px-2 py-0.5 rounded-full">🔥 HOT</span>}
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STAGE_COLORS[deal.stage]}`}>{deal.stage}</span>
+                    </div>
+                    <div className="font-bold text-slate-900 text-lg">{deal.title}</div>
+                    <div className="text-sm text-slate-500">Tenant: {deal.client}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-slate-400">Monthly Rent</div>
+                    <div className={`text-2xl font-bold text-teal-600`}>{deal.val}</div>
+                    <div className="text-xs text-slate-400 mt-1">{deal.val2}</div>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div className={`text-xs font-medium ${deal.follow === "Overdue" ? "text-red-500" : "text-slate-400"}`}>
+                    {deal.follow === "Overdue" ? "⚠️ Follow-up overdue" : `📅 Follow-up: ${deal.follow}`}
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition">📞 Log Call</button>
+                    <button className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg transition">💬 Log Note</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      )}
-      {panelOpen&&(<div className="fixed inset-0 z-50 flex"><div className="flex-1 bg-black/30" onClick={closePanel}/>
-        <div className="w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto flex flex-col">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white"><div className="flex items-center gap-2"><div className="w-6 h-6 rounded bg-teal-600 flex items-center justify-center text-white text-[10px] font-bold">PM</div><h2 className="text-base font-bold text-slate-900">{editId!==null?"Edit Unit":"New Property Unit"}</h2></div><button onClick={closePanel} className="text-slate-400 text-2xl">✕</button></div>
-          <form onSubmit={handleSubmit} className="flex-1 px-6 py-5 space-y-4">
-            {[{label:"Property / Unit Name *",name:"title",placeholder:"e.g. Oak St Unit 2B",required:true},{label:"Tenant Name *",name:"seller",placeholder:"Tenant full name",required:true},{label:"Property Address",name:"address",placeholder:"123 Oak St, Unit 2B, City"}].map((f)=>(<div key={f.name}><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">{f.label}</label><input name={f.name} value={(form as any)[f.name]} onChange={handleChange} required={f.required} placeholder={f.placeholder} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"/></div>))}
-            <div className="grid grid-cols-2 gap-3"><div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Market Rent ($)</label><input name="arv" value={form.arv} onChange={handleChange} placeholder="e.g. 2500" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"/></div><div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Unit Type</label><input name="offer" value={form.offer} onChange={handleChange} placeholder="e.g. 2BR/1BA" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"/></div></div>
-            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Monthly Rent ($)</label><input name="amount" value={form.amount} onChange={handleChange} placeholder="e.g. 2200" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"/></div>
-            <div className="grid grid-cols-2 gap-3"><div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Stage</label><select name="stage" value={form.stage} onChange={handleChange} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white">{STAGES.map((s)=><option key={s}>{s}</option>)}</select></div><div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Lease End / Follow-up</label><input type="date" name="next_follow_up" value={form.next_follow_up} onChange={handleChange} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm"/></div></div>
-            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Link Contact</label><select name="contact_email" value={form.contact_email} onChange={handleChange} className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"><option value="">No contact</option>{contacts.map((c)=><option key={c.email} value={c.email}>{c.name} — {c.phone}</option>)}</select></div>
-            <div className="flex gap-3 pt-2 pb-6"><button type="submit" disabled={saving} className="flex-1 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-bold text-sm py-3 rounded-lg">{saving?"Saving...":editId!==null?"Update Unit":"Add Unit"}</button><button type="button" onClick={closePanel} className="px-5 border border-slate-200 text-slate-600 text-sm py-3 rounded-lg">Cancel</button></div>
-          </form>
+      </section>
+
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-slate-900 text-center mb-12">Built for your industry, not generic tools</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+                        <div className="flex gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="text-3xl">🏢</div>
+              <div>
+                <div className="font-bold text-slate-900 mb-1">Tenant Pipeline</div>
+                <div className="text-sm text-slate-500 leading-relaxed">Track every prospect from inquiry to active lease with property management stages.</div>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="text-3xl">💰</div>
+              <div>
+                <div className="font-bold text-slate-900 mb-1">Rent Tracking</div>
+                <div className="text-sm text-slate-500 leading-relaxed">Track monthly rent, security deposits, and annual revenue per property.</div>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="text-3xl">📅</div>
+              <div>
+                <div className="font-bold text-slate-900 mb-1">Lease Renewal Alerts</div>
+                <div className="text-sm text-slate-500 leading-relaxed">Set lease end dates and get alerts before tenants leave.</div>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="text-3xl">📊</div>
+              <div>
+                <div className="font-bold text-slate-900 mb-1">Portfolio Dashboard</div>
+                <div className="text-sm text-slate-500 leading-relaxed">See total units, occupancy rate, and monthly revenue at a glance.</div>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="text-3xl">🔥</div>
+              <div>
+                <div className="font-bold text-slate-900 mb-1">High-Value Tenant Alerts</div>
+                <div className="text-sm text-slate-500 leading-relaxed">Large commercial tenants get flagged so you prioritize the right prospects.</div>
+              </div>
+            </div>
+            <div className="flex gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="text-3xl">📞</div>
+              <div>
+                <div className="font-bold text-slate-900 mb-1">Tenant Activity Log</div>
+                <div className="text-sm text-slate-500 leading-relaxed">Log every showing, application, and maintenance request with one click.</div>
+              </div>
+            </div>
+
+          </div>
         </div>
-      </div>)}
+      </section>
+
+      <section className="bg-slate-900 py-20 px-6">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Ready to fill your vacancies faster?</h2>
+          <p className="text-slate-400 text-lg mb-8">Start your free 14-day trial. No credit card required.</p>
+          <Link href="/login?mode=signup&industry=property-management" className="inline-block bg-teal-600 hover:bg-teal-700 text-white font-bold text-lg px-10 py-4 rounded-xl transition">Start free trial →</Link>
+          <div className="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
+            <span>✓ 14 days free</span><span>✓ No credit card</span><span>✓ Cancel anytime</span>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-slate-800 bg-slate-900 py-8 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">PD</div>
+            <span className="font-bold text-white">PipeDesk</span>
+          </div>
+          <Link href="/" className="text-sm text-slate-500 hover:text-white transition">← See all 18 industries</Link>
+        </div>
+      </footer>
     </div>
   );
 }
