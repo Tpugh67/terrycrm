@@ -258,7 +258,7 @@ export default function JoinPage() {
                 Submit Application →
               </button>
               {!agreed && <p className="text-xs text-red-500 text-center">Please read and agree to the Sales Rep Agreement above before applying.</p>}
-              <p className="text-xs text-slate-400 text-center">We review all applications within 24 hours · terry@pipedesk.app</p>
+              <p className="text-xs text-slate-400 text-center">We review all applications within 24 hours · hello@pipedesk.app</p>
             </form>
           )}
         </div>
@@ -270,7 +270,7 @@ export default function JoinPage() {
             <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">PD</div>
             <span className="font-bold text-white">PipeDesk</span>
           </div>
-          <span className="text-sm text-slate-500">Questions? Email terry@pipedesk.app</span>
+          <span className="text-sm text-slate-500">Questions? Email hello@pipedesk.app</span>
         </div>
       </footer>
     </div>

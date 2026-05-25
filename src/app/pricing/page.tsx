@@ -163,7 +163,7 @@ export default function PricingPage() {
                   Start free trial →
                 </button>
               ) : (
-                <a href="mailto:terry@pipedesk.app?subject=Corporate Plan Inquiry" className={`w-full ${plan.btn} text-white font-bold py-3 rounded-xl transition text-center block`}>
+                <a href="mailto:hello@pipedesk.app?subject=Corporate Plan Inquiry" className={`w-full ${plan.btn} text-white font-bold py-3 rounded-xl transition text-center block`}>
                   Contact us →
                 </a>
               )}
@@ -216,7 +216,7 @@ export default function PricingPage() {
           <div className="flex gap-6 text-sm text-slate-500">
             <Link href="/" className="hover:text-white transition">Home</Link>
             <Link href="/join" className="hover:text-white transition">Become a Rep</Link>
-            <a href="mailto:terry@pipedesk.app" className="hover:text-white transition">Contact</a>
+            <a href="mailto:hello@pipedesk.app" className="hover:text-white transition">Contact</a>
           </div>
         </div>
       </footer>
