@@ -138,7 +138,12 @@ export default function JoinPage() {
       <section className="py-16 px-6">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-slate-900 text-center mb-4">Sales Rep Agreement</h2>
-          <p className="text-slate-500 text-center mb-8">Read and agree to the terms before applying.</p>
+          <p className="text-slate-500 text-center mb-6">Read and agree to the terms before applying.</p>
+          <div className="text-center mb-8">
+            <a href="/sales-rep-agreement.pdf" target="_blank" className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-700 text-white font-semibold px-6 py-3 rounded-xl transition text-sm">
+              📄 Download Sales Rep Agreement (PDF)
+            </a>
+          </div>
 
           <div className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden mb-6">
             <button onClick={() => setShowAgreement(!showAgreement)} className="w-full flex items-center justify-between px-6 py-4 text-left font-bold text-slate-900 hover:bg-slate-100 transition">
