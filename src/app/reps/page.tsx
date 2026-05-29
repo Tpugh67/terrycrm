@@ -1,16 +1,43 @@
 "use client";
+import { useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 export default function RepsPage() {
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setLoading(true);
+    setError("");
     const form = e.currentTarget;
     const name = (form.elements.namedItem("name") as HTMLInputElement).value.trim();
     const email = (form.elements.namedItem("email") as HTMLInputElement).value.trim();
+    const phone = (form.elements.namedItem("phone") as HTMLInputElement).value.trim();
+    const linkedin = (form.elements.namedItem("linkedin") as HTMLInputElement).value.trim();
     const background = (form.elements.namedItem("background") as HTMLTextAreaElement).value.trim();
     const why = (form.elements.namedItem("why") as HTMLTextAreaElement).value.trim();
 
-    const mailto = `mailto:terry@pipedesk.app?subject=Rep Application – ${encodeURIComponent(name)}&body=Name: ${encodeURIComponent(name)}%0AEmail: ${encodeURIComponent(email)}%0A%0ASales Background:%0A${encodeURIComponent(background)}%0A%0AWhy Interested:%0A${encodeURIComponent(why)}`;
-    window.open(mailto);
+    // Generate unique ref code from name
+    const ref_code = name.toLowerCase().replace(/\s+/g, "") + Math.floor(Math.random() * 900 + 100);
+
+    const { error: dbError } = await supabase.from("reps").insert({
+      name, email, phone, linkedin,
+      sales_background: background,
+      why_interested: why,
+      ref_code,
+      status: "pending",
+    });
+
+    if (dbError) {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    setSubmitted(true);
+    setLoading(false);
   }
 
   return (
@@ -66,38 +93,59 @@ export default function RepsPage() {
 
         <div className="bg-white border border-gray-200 rounded-2xl p-6">
           <h2 className="text-base font-medium mb-4">Apply now</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm text-gray-500">Full name</label>
-              <input name="name" type="text" required placeholder="Your name"
-                className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10" />
+
+          {submitted ? (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+              <div className="text-2xl mb-2">✅</div>
+              <div className="font-medium text-green-800 mb-1">Application received!</div>
+              <div className="text-sm text-green-600">Terry will review your application and be in touch within 48 hours.</div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm text-gray-500">Email</label>
-              <input name="email" type="email" required placeholder="you@email.com"
-                className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm text-gray-500">Sales background</label>
-              <textarea name="background" required rows={3} placeholder="Brief summary of your sales experience..."
-                className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10 resize-y" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm text-gray-500">Why are you interested?</label>
-              <textarea name="why" required rows={3} placeholder="What excites you about this opportunity?"
-                className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10 resize-y" />
-            </div>
-            <div className="flex gap-3 pt-1">
-              <a href="/sales-rep-agreement.pdf" download
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                ↓ Download rep agreement
-              </a>
-              <button type="submit"
-                className="flex-1 px-4 py-2.5 rounded-lg bg-[#0d1f3c] text-white text-sm font-medium hover:bg-[#1a3a6e] transition-colors">
-                Submit application ↗
-              </button>
-            </div>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm text-gray-500">Full name</label>
+                <input name="name" type="text" required placeholder="Your name"
+                  className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm text-gray-500">Email</label>
+                <input name="email" type="email" required placeholder="you@email.com"
+                  className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm text-gray-500">Phone</label>
+                <input name="phone" type="tel" placeholder="(555) 000-0000"
+                  className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm text-gray-500">LinkedIn URL</label>
+                <input name="linkedin" type="text" placeholder="linkedin.com/in/yourname"
+                  className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm text-gray-500">Sales background</label>
+                <textarea name="background" required rows={3} placeholder="Brief summary of your sales experience..."
+                  className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10 resize-y" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm text-gray-500">Why are you interested?</label>
+                <textarea name="why" required rows={3} placeholder="What excites you about this opportunity?"
+                  className="px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 focus:outline-none focus:border-[#1a5fa8] focus:ring-2 focus:ring-[#1a5fa8]/10 resize-y" />
+              </div>
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              <div className="flex gap-3 pt-1">
+                <a href="/sales-rep-agreement.pdf" download
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                  ↓ Download rep agreement
+                </a>
+                <button type="submit" disabled={loading}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-[#0d1f3c] text-white text-sm font-medium hover:bg-[#1a3a6e] transition-colors disabled:opacity-50">
+                  {loading ? "Submitting..." : "Submit application ↗"}
+                </button>
+              </div>
+            </form>
+          )}
+
           <p className="text-xs text-gray-400 mt-4 leading-relaxed">
             Commission-only role. No salary or guarantee. Full terms in the rep agreement above.
           </p>
