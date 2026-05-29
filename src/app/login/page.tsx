@@ -19,10 +19,18 @@ function LoginForm() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError(""); setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) { setError(error.message); return; }
-    router.push("/dashboard");
+    // Check role and redirect accordingly
+    if (data.user) {
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
+      if (profile?.role === "rep") {
+        router.push("/rep-portal");
+      } else {
+        router.push("/dashboard");
+      }
+    }
     router.refresh();
   }
 
@@ -41,6 +49,7 @@ function LoginForm() {
         email,
         industry,
         plan: "trial",
+        role: "user",
       });
     }
     try {
