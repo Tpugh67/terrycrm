@@ -41,6 +41,7 @@ const INDUSTRIES = [
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard", "/contacts": "Contacts", "/pipeline": "Pipeline",
   "/tasks": "Tasks", "/settings": "Settings",
+  "/admin/reps": "Rep Applications",
   "/real-estate": "Real Estate", "/insurance": "Insurance",
   "/mortgage": "Mortgage & Lending", "/auto": "Automotive",
   "/solar": "Solar Energy", "/financial": "Financial Services",
