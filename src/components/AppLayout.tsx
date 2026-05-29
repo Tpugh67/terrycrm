@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/contacts", icon: "👥", label: "Contacts" },
   { href: "/pipeline", icon: "🔀", label: "Pipeline" },
   { href: "/tasks", icon: "✅", label: "Tasks" },
+  { href: "/admin/reps", icon: "🧑‍💼", label: "Rep Applications" },
 ];
 
 const INDUSTRIES = [
