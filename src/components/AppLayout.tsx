@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const PUBLIC_PATHS = ["/", "/login", "/pricing",
+const PUBLIC_PATHS = ["/", "/login", "/pricing", "/rep-portal",
   "/real-estate", "/insurance", "/mortgage", "/auto", "/solar",
   "/financial", "/legal", "/recruiting", "/healthcare", "/construction",
   "/consulting", "/ecommerce", "/property-management", "/trucking",
