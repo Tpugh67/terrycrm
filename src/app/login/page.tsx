@@ -49,6 +49,8 @@ function LoginForm() {
         email,
         industry,
         plan: "trial",
+        subscription_status: "trial",
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         role: "user",
       });
     }
