@@ -38,17 +38,17 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       }
 
       // Check trial/subscription status
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("subscription_status, trial_ends_at, role")
-        .eq("id", session.user.id)
-        .single();
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("subscription_status, trial_ends_at, role")
+  .eq("id", session.user.id)
+  .single();
 
-      // Reps bypass trial check
-      if (profile?.role === "rep" || profile?.role === "admin") {
-        setChecked(true);
-        return;
-      }
+// No profile yet or admin — let them in
+if (!profile || profile?.role === "rep" || profile?.role === "admin") {
+  setChecked(true);
+  return;
+} 
 
       const status = profile?.subscription_status;
       const trialEndsAt = profile?.trial_ends_at;
