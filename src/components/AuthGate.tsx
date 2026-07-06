@@ -45,7 +45,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         .single();
 
       // Reps bypass trial check
-      if (profile?.role === "rep") {
+      if (profile?.role === "rep" || profile?.role === "admin") {
         setChecked(true);
         return;
       }
