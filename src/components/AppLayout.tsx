@@ -3,6 +3,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import WelcomeModal from "./WelcomeModal";
+import OnboardingChecklist from "./OnboardingChecklist";
 
 const PUBLIC_PATHS = ["/", "/login", "/pricing", "/rep-portal", "/reps",
   "/real-estate", "/insurance", "/mortgage", "/auto", "/solar",
@@ -209,6 +211,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+      <WelcomeModal />
+      <OnboardingChecklist />
     </div>
   );
 }
