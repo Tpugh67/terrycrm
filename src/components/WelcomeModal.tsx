@@ -55,7 +55,7 @@ export default function WelcomeModal() {
     }
     setSaving(false);
     setShow(false);
-    router.push("/" + selected);
+    router.push("/pipeline");
   }
 
   if (!show) return null;
