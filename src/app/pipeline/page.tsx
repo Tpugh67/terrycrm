@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import DealAI from "../../components/DealAI";
 import { supabase } from "../../lib/supabase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -587,6 +588,7 @@ export default function PipelinePage() {
                               className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
 
+                            <DealAI deal={d} notes={dealNotes.map(n => n.content).join(". ")} />
                             <div className="flex gap-4 mt-3">
                               <button onClick={() => { openEdit(d); setExpandedDeal(null); }} className="text-xs text-blue-600 hover:text-blue-800 font-semibold">
                                 Edit deal
