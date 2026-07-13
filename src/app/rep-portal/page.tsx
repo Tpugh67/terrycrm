@@ -20,6 +20,22 @@ type Activity = {
   notes: string;
 };
 
+type Lead = {
+  id: string;
+  email: string;
+  subscription_status: string;
+  plan: string;
+  created_at: string;
+};
+
+type Commission = {
+  id: string;
+  subscription_amount: number | null;
+  commission_amount: number | null;
+  month: string;
+  status: string;
+};
+
 const AI_PROMPTS = [
   "Write a LinkedIn post promoting PipeDesk CRM",
   "Create a cold email to a real estate investor about PipeDesk",
@@ -32,6 +48,8 @@ const AI_PROMPTS = [
 export default function RepPortalPage() {
   const [rep, setRep] = useState<Rep | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [commissions, setCommissions] = useState<Commission[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +72,20 @@ export default function RepPortalPage() {
         setRep(repData);
         const { data: acts } = await supabase.from("rep_activity").select("*").eq("rep_id", repData.id).order("created_at", { ascending: false });
         if (acts) setActivities(acts);
+
+        const { data: leadsData } = await supabase
+          .from("profiles")
+          .select("id, email, subscription_status, plan, created_at")
+          .eq("referred_by", repData.ref_code)
+          .order("created_at", { ascending: false });
+        if (leadsData) setLeads(leadsData);
+
+        const { data: commData } = await supabase
+          .from("rep_commissions")
+          .select("id, subscription_amount, commission_amount, month, status")
+          .eq("rep_id", repData.id)
+          .order("month", { ascending: false });
+        if (commData) setCommissions(commData);
       }
       setLoading(false);
     }
@@ -113,6 +145,14 @@ export default function RepPortalPage() {
   );
 
   const refLink = `https://pipedesk.app/?ref=${rep.ref_code}`;
+  const activeClients = leads.filter(l => l.subscription_status === "active").length;
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthlyIncome = commissions
+    .filter(c => c.month === currentMonth && c.status === "paid")
+    .reduce((sum, c) => sum + Number(c.commission_amount || 0), 0);
+  const totalEarned = commissions
+    .filter(c => c.status === "paid")
+    .reduce((sum, c) => sum + Number(c.commission_amount || 0), 0);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -166,8 +206,8 @@ export default function RepPortalPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: "Commission Rate", value: "30%", icon: "💰", color: "text-emerald-600" },
-                { label: "Active Clients", value: "0", icon: "👥", color: "text-blue-600" },
-                { label: "Monthly Income", value: "$0", icon: "📈", color: "text-purple-600" },
+                { label: "Active Clients", value: String(activeClients), icon: "👥", color: "text-blue-600" },
+                { label: "Monthly Income", value: `$${monthlyIncome.toFixed(2)}`, icon: "📈", color: "text-purple-600" },
                 { label: "Activities Logged", value: String(activities.length), icon: "📋", color: "text-amber-600" },
               ].map((s) => (
                 <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
@@ -201,9 +241,49 @@ export default function RepPortalPage() {
               </div>
             </div>
 
+            {/* My Leads */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-slate-900 mb-4">👥 My Leads</h2>
+              {leads.length === 0 ? (
+                <div className="text-center py-8 text-slate-400">
+                  <div className="text-3xl mb-2">🔗</div>
+                  <div className="font-semibold text-slate-600 mb-1">No signups yet</div>
+                  <div className="text-sm">Share your referral link above to start earning.</div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {leads.map((lead) => (
+                    <div key={lead.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">{lead.email}</div>
+                        <div className="text-xs text-slate-400">Joined {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                      </div>
+                      <span className={"text-xs font-bold px-2 py-1 rounded-full " + (
+                        lead.subscription_status === "active" ? "bg-emerald-100 text-emerald-700" :
+                        lead.subscription_status === "trial" ? "bg-blue-100 text-blue-700" :
+                        lead.subscription_status === "past_due" ? "bg-amber-100 text-amber-700" :
+                        "bg-slate-200 text-slate-600"
+                      )}>
+                        {lead.subscription_status === "active" ? "Paying" :
+                         lead.subscription_status === "trial" ? "On Trial" :
+                         lead.subscription_status === "past_due" ? "Past Due" :
+                         lead.subscription_status || "Unknown"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Commission breakdown */}
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">💰 Commission Structure</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-900">💰 Commission Structure</h2>
+                <div className="text-right">
+                  <div className="text-xs text-slate-400">Total earned</div>
+                  <div className="text-xl font-bold text-emerald-600">${totalEarned.toFixed(2)}</div>
+                </div>
+              </div>
               <div className="grid md:grid-cols-3 gap-4">
                 {[
                   { plan: "Solo Plan", price: "$29/mo", commission: "$8.70/mo" },
