@@ -19,6 +19,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/help": "Help Center", "/partners": "Partners",
   "/affiliate/apply": "Affiliate Application", "/affiliate/dashboard": "Affiliate Dashboard",
   "/reports": "Admin Command Center",
+  "/admin/affiliates": "Affiliate Applications",
 };
 
 // ─── ADMIN SIDEBAR ────────────────────────────────────────────────────────────
@@ -33,7 +34,7 @@ const ADMIN_NAV = [
   ]},
   { section: "GROWTH CENTER", items: [
     { href: "/admin/reps", icon: "🤝", label: "Sales Reps" },
-    { href: "/affiliate/apply", icon: "📣", label: "Affiliates" },
+    { href: "/admin/affiliates", icon: "📣", label: "Affiliates" },
     { href: "/partners", icon: "🏢", label: "Partners" },
   ]},
   { section: "REPORTING", items: [
@@ -187,7 +188,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Logo */}
       <div className="px-5 py-5 border-b border-slate-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -201,7 +201,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-0.5">
         {navSections.map((section) => (
           <div key={section.section}>
@@ -220,7 +219,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         ))}
 
-        {/* Industries — only for admin and customer */}
         {showIndustries && (
           <>
             <button onClick={() => setIndustriesOpen(!industriesOpen)}
@@ -241,7 +239,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </>
         )}
 
-        {/* Logout */}
         <div className="pt-2">
           <button onClick={handleLogout} className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition text-red-400 hover:bg-red-900/20 hover:text-red-300">
             <span>🚪</span><span>Logout</span>
@@ -249,7 +246,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
 
-      {/* User info */}
       <div className="px-4 py-3 border-t border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">{userInitials}</div>

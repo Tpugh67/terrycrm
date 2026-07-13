@@ -29,8 +29,14 @@ export default function AdminRepsPage() {
     setLoading(false);
   }
 
-  async function updateStatus(id: string, status: string) {
-    await supabase.from("reps").update({ status }).eq("id", id);
+  async function updateStatus(id: string, status: string, email: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch("/api/update-partner-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ partnerType: "rep", status, repId: id, email }),
+    });
     setReps(reps.map(r => r.id === id ? { ...r, status } : r));
   }
 
@@ -53,7 +59,6 @@ export default function AdminRepsPage() {
         </div>
       </div>
 
-      {/* Filter tabs */}
       <div className="flex gap-2">
         {["all", "pending", "approved", "rejected"].map(f => (
           <button key={f} onClick={() => setFilter(f)}
@@ -107,19 +112,19 @@ export default function AdminRepsPage() {
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
                   {rep.status !== "approved" && (
-                    <button onClick={() => updateStatus(rep.id, "approved")}
+                    <button onClick={() => updateStatus(rep.id, "approved", rep.email)}
                       className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition">
                       Approve
                     </button>
                   )}
                   {rep.status !== "rejected" && (
-                    <button onClick={() => updateStatus(rep.id, "rejected")}
+                    <button onClick={() => updateStatus(rep.id, "rejected", rep.email)}
                       className="px-4 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 text-sm font-medium hover:bg-red-100 transition">
                       Reject
                     </button>
                   )}
                   {rep.status !== "pending" && (
-                    <button onClick={() => updateStatus(rep.id, "pending")}
+                    <button onClick={() => updateStatus(rep.id, "pending", rep.email)}
                       className="px-4 py-2 rounded-lg bg-gray-50 text-gray-600 border border-gray-200 text-sm font-medium hover:bg-gray-100 transition">
                       Reset
                     </button>

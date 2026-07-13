@@ -21,10 +21,6 @@ function LoginForm() {
   }, [searchParams]);
 
   useEffect(() => {
-    // Supabase's password-recovery email link lands back here with a
-    // token in the URL. The client SDK parses it automatically and fires
-    // this event — that's our cue to show the "set new password" form
-    // instead of the normal login screen.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setMode("reset");
@@ -69,6 +65,8 @@ function LoginForm() {
       const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
       if (profile?.role === "rep") {
         router.push("/rep-portal");
+      } else if (profile?.role === "affiliate") {
+        router.push("/affiliate/dashboard");
       } else {
         router.push("/dashboard");
       }
@@ -92,6 +90,19 @@ function LoginForm() {
       refCode = null;
     }
 
+    let resolvedRole = "user";
+    try {
+      const roleRes = await fetch("/api/resolve-signup-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const roleData = await roleRes.json();
+      resolvedRole = roleData.role || "user";
+    } catch {
+      resolvedRole = "user";
+    }
+
     if (signUpData.user) {
       await supabase.from("profiles").upsert({
         id: signUpData.user.id,
@@ -100,7 +111,7 @@ function LoginForm() {
         plan: "trial",
         subscription_status: "trial",
         trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        role: "user",
+        role: resolvedRole,
       });
 
       if (refCode) {
@@ -120,7 +131,6 @@ function LoginForm() {
         }
       }
 
-      // Fire-and-forget admin notification — don't block signup on this.
       fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
