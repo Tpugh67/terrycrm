@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { sendAdminNotification } from "../../../lib/email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-04-22.dahlia" });
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -25,6 +26,10 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
+        // Fires when the card is added and the trial starts. No money has
+        // moved yet (amount_total is $0 for a trial subscription), so this
+        // only links the Stripe customer/subscription to the profile —
+        // commission calculation happens later, at invoice.payment_succeeded.
         const session = event.data.object as Stripe.Checkout.Session;
         const email = session.customer_email || session.customer_details?.email;
         const customerId = session.customer as string;
@@ -36,20 +41,33 @@ export async function POST(req: NextRequest) {
             subscription_status: "active",
             trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
           }).eq("email", email);
+        }
+        break;
+      }
+      case "invoice.payment_succeeded": {
+        // The real charge — fires immediately if no trial, or after the
+        // 14-day trial ends. This is the correct place to calculate and
+        // record the rep's 30% commission, and to notify on real revenue.
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+        const amountPaid = invoice.amount_paid; // cents
 
-          // Referral commission: 30% of what they actually paid, credited
-          // to whichever rep referred them (if any).
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("id, referred_by")
-            .eq("email", email)
-            .maybeSingle();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, email, referred_by")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
 
-          if (profile?.referred_by && session.amount_total) {
-            const subscriptionAmount = session.amount_total / 100; // cents -> dollars
+        if (profile && amountPaid > 0) {
+          const subscriptionAmount = amountPaid / 100;
+          const month = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
+          if (profile.referred_by) {
             const commissionAmount = Math.round(subscriptionAmount * 0.3 * 100) / 100;
-            const month = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
+            // First payment: there's a "pending" placeholder row created at
+            // signup — fill it in. Later months: insert a fresh row per
+            // month so commission history accumulates correctly.
             const { data: pending } = await supabase
               .from("rep_commissions")
               .select("id")
@@ -65,23 +83,40 @@ export async function POST(req: NextRequest) {
                 status: "paid",
               }).eq("id", pending.id);
             } else {
-              const { data: rep } = await supabase
-                .from("reps")
+              const { data: existingThisMonth } = await supabase
+                .from("rep_commissions")
                 .select("id")
-                .eq("ref_code", profile.referred_by)
+                .eq("user_id", profile.id)
+                .eq("month", month)
                 .maybeSingle();
-              if (rep) {
-                await supabase.from("rep_commissions").insert({
-                  rep_id: rep.id,
-                  user_id: profile.id,
-                  subscription_amount: subscriptionAmount,
-                  commission_amount: commissionAmount,
-                  month,
-                  status: "paid",
-                });
+
+              if (!existingThisMonth) {
+                const { data: rep } = await supabase
+                  .from("reps")
+                  .select("id")
+                  .eq("ref_code", profile.referred_by)
+                  .maybeSingle();
+                if (rep) {
+                  await supabase.from("rep_commissions").insert({
+                    rep_id: rep.id,
+                    user_id: profile.id,
+                    subscription_amount: subscriptionAmount,
+                    commission_amount: commissionAmount,
+                    month,
+                    status: "paid",
+                  });
+                }
               }
             }
           }
+
+          await sendAdminNotification(
+            `💳 Payment succeeded: $${subscriptionAmount.toFixed(2)}`,
+            `<h2>Payment received</h2>
+             <p><strong>Customer:</strong> ${profile.email}</p>
+             <p><strong>Amount:</strong> $${subscriptionAmount.toFixed(2)}</p>
+             <p><strong>Referred by:</strong> ${profile.referred_by || "none"}</p>`
+          );
         }
         break;
       }
@@ -99,6 +134,19 @@ export async function POST(req: NextRequest) {
         await supabase.from("profiles").update({
           subscription_status: "past_due",
         }).eq("stripe_customer_id", customerId);
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+
+        await sendAdminNotification(
+          `⚠️ Payment failed: ${profile?.email || customerId}`,
+          `<h2>Payment failed</h2>
+           <p><strong>Customer:</strong> ${profile?.email || "unknown"}</p>
+           <p>Their subscription status has been set to <strong>past_due</strong>.</p>`
+        );
         break;
       }
     }

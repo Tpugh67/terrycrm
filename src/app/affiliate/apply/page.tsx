@@ -22,6 +22,16 @@ export default function AffiliateApplyPage() {
       why: form.why,
       status: "pending",
     });
+
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "affiliate_application",
+        data: { name: form.name, email: form.email, platform: form.platform, audience: form.audience },
+      }),
+    }).catch(() => {});
+
     setSubmitted(true);
   }
 

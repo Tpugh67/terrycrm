@@ -77,6 +77,16 @@ function LoginForm() {
           // ignore
         }
       }
+
+      // Fire-and-forget admin notification — don't block signup on this.
+      fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "signup",
+          data: { email, industry, referredBy: refCode || "" },
+        }),
+      }).catch(() => {});
     }
     try {
       const res = await fetch("/api/checkout", {

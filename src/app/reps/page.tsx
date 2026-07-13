@@ -36,6 +36,15 @@ export default function RepsPage() {
       return;
     }
 
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "rep_application",
+        data: { name, email, phone, linkedin },
+      }),
+    }).catch(() => {});
+
     setSubmitted(true);
     setLoading(false);
   }
