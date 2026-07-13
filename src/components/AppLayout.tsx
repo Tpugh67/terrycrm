@@ -18,6 +18,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/tasks": "Tasks", "/settings": "Settings", "/admin/reps": "Rep Applications",
   "/help": "Help Center", "/partners": "Partners",
   "/affiliate/apply": "Affiliate Application", "/affiliate/dashboard": "Affiliate Dashboard",
+  "/reports": "Admin Command Center",
 };
 
 // ─── ADMIN SIDEBAR ────────────────────────────────────────────────────────────
