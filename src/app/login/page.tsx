@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { REF_STORAGE_KEY } from "../../components/ReferralCapture";
 
 function LoginForm() {
   const router = useRouter();
@@ -22,7 +23,6 @@ function LoginForm() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) { setError(error.message); return; }
-    // Check role and redirect accordingly
     if (data.user) {
       const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
       if (profile?.role === "rep") {
@@ -31,7 +31,6 @@ function LoginForm() {
         router.push("/dashboard");
       }
     }
-    
   }
 
   async function handleSignup(e: React.FormEvent) {
@@ -43,6 +42,16 @@ function LoginForm() {
     if (error) { setError(error.message); setLoading(false); return; }
     const industry = searchParams.get("industry") || "";
     const plan = searchParams.get("plan") || "solo";
+
+    // Referral attribution: pull whatever ref code ReferralCapture stored
+    // when this visitor first landed on a rep's link.
+    let refCode: string | null = null;
+    try {
+      refCode = localStorage.getItem(REF_STORAGE_KEY);
+    } catch {
+      refCode = null;
+    }
+
     if (signUpData.user) {
       await supabase.from("profiles").upsert({
         id: signUpData.user.id,
@@ -53,6 +62,26 @@ function LoginForm() {
         trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         role: "user",
       });
+
+      if (refCode) {
+        // Server-side: looks up the rep by ref_code and creates a pending
+        // commission record. Runs with the service role key so we don't
+        // need to expose rep contact info via RLS to unauthenticated visitors.
+        try {
+          await fetch("/api/track-referral", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: signUpData.user.id, refCode }),
+          });
+        } catch {
+          // Non-fatal — don't block signup if attribution fails.
+        }
+        try {
+          localStorage.removeItem(REF_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+      }
     }
     try {
       const res = await fetch("/api/checkout", {

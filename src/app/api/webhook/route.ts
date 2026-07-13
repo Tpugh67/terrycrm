@@ -36,6 +36,52 @@ export async function POST(req: NextRequest) {
             subscription_status: "active",
             trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
           }).eq("email", email);
+
+          // Referral commission: 30% of what they actually paid, credited
+          // to whichever rep referred them (if any).
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, referred_by")
+            .eq("email", email)
+            .maybeSingle();
+
+          if (profile?.referred_by && session.amount_total) {
+            const subscriptionAmount = session.amount_total / 100; // cents -> dollars
+            const commissionAmount = Math.round(subscriptionAmount * 0.3 * 100) / 100;
+            const month = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
+            const { data: pending } = await supabase
+              .from("rep_commissions")
+              .select("id")
+              .eq("user_id", profile.id)
+              .eq("status", "pending")
+              .maybeSingle();
+
+            if (pending) {
+              await supabase.from("rep_commissions").update({
+                subscription_amount: subscriptionAmount,
+                commission_amount: commissionAmount,
+                month,
+                status: "paid",
+              }).eq("id", pending.id);
+            } else {
+              const { data: rep } = await supabase
+                .from("reps")
+                .select("id")
+                .eq("ref_code", profile.referred_by)
+                .maybeSingle();
+              if (rep) {
+                await supabase.from("rep_commissions").insert({
+                  rep_id: rep.id,
+                  user_id: profile.id,
+                  subscription_amount: subscriptionAmount,
+                  commission_amount: commissionAmount,
+                  month,
+                  status: "paid",
+                });
+              }
+            }
+          }
         }
         break;
       }
