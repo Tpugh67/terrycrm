@@ -7,7 +7,7 @@ import WelcomeModal from "./WelcomeModal";
 import OnboardingChecklist from "./OnboardingChecklist";
 
 const PUBLIC_PATHS = ["/", "/login", "/pricing", "/rep-portal", "/reps",
-  "/partners", "/affiliate/apply", "/affiliate/dashboard",
+  "/partners", "/affiliate/apply", "/affiliate/dashboard", "/agency/apply",
   "/real-estate", "/insurance", "/mortgage", "/auto", "/solar",
   "/financial", "/legal", "/recruiting", "/healthcare", "/construction",
   "/consulting", "/ecommerce", "/property-management", "/trucking",

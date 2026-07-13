@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendAdminNotification } from "../../../lib/email";
 
-type NotifyType = "signup" | "rep_application" | "affiliate_application";
+type NotifyType = "signup" | "rep_application" | "affiliate_application" | "agency_application";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,6 +41,17 @@ export async function POST(req: NextRequest) {
           <p><strong>Email:</strong> ${data.email}</p>
           <p><strong>Platform:</strong> ${data.platform || "not provided"}</p>
           <p><strong>Audience:</strong> ${data.audience || "not provided"}</p>
+        `;
+        break;
+
+      case "agency_application":
+        subject = `🏢 New agency partner application: ${data.agencyName}`;
+        html = `
+          <h2>New agency partner application</h2>
+          <p><strong>Agency:</strong> ${data.agencyName}</p>
+          <p><strong>Contact:</strong> ${data.name}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Estimated clients:</strong> ${data.clientCount || "not provided"}</p>
         `;
         break;
 
