@@ -36,8 +36,13 @@ export default function WelcomeModal() {
     async function check() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: profile } = await supabase.from("profiles").select("onboarded, industry, email").eq("id", user.id).single();
-      if (!profile?.onboarded) {
+      const { data: profile, error } = await supabase.from("profiles").select("onboarded, industry, email").eq("id", user.id).single();
+      // Only show the modal when we successfully confirmed the profile is
+      // genuinely not onboarded — a failed/empty query should never trigger
+      // this (previously `!profile?.onboarded` was true on any query error,
+      // incorrectly showing the modal to already-onboarded users).
+      if (error || !profile) return;
+      if (!profile.onboarded) {
         const name = (profile?.email || user.email || "").split("@")[0].split(".")[0];
         setUserName(name.charAt(0).toUpperCase() + name.slice(1));
         setShow(true);
