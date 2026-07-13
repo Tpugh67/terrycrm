@@ -8,8 +8,8 @@ const FAQS = [
     items: [
       { q: "What is PipeDesk?", a: "PipeDesk is a multi-industry CRM platform built for businesses that manage leads, clients, and sales pipelines. It serves 18 industries including real estate, insurance, mortgage, solar, legal, healthcare, and more." },
       { q: "How much does PipeDesk cost?", a: "PipeDesk offers three plans: Solo at $29/month, Team at $79/month, and Business at $149/month. All plans include a free 14-day trial." },
-      { q: "Is there a free trial?", a: "Yes — every plan includes a free 14-day trial. No credit card required to start." },
-      { q: "Do I need a credit card?", a: "No credit card is required to start your free trial. You only enter payment info when you decide to subscribe." },
+      { q: "Is there a free trial?", a: "Yes — every plan includes a free 14-day trial. We ask for a card at signup, but you will not be charged until the trial ends." },
+      { q: "Do I need a credit card?", a: "We collect your card when you sign up, but you will not be charged until your 14-day trial ends. Cancel anytime before then and you will not be billed." },
       { q: "Can I cancel anytime?", a: "Yes. You can cancel your subscription at any time from your account settings. No cancellation fees." },
       { q: "Can I change plans later?", a: "Yes. You can upgrade or downgrade your plan at any time from your account settings." },
     ],
@@ -190,7 +190,7 @@ export default function HelpPage() {
             <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center">
               <div className="text-3xl mb-3">🚀</div>
               <h3 className="font-bold text-blue-900 mb-2">Ready to get started?</h3>
-              <p className="text-blue-700 text-sm mb-4">Start your free 14-day trial — no credit card required.</p>
+              <p className="text-blue-700 text-sm mb-4">Start your free 14-day trial — no charge for 14 days.</p>
               <Link href="/login?mode=signup" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl transition text-sm">Start Free Trial →</Link>
             </div>
           </div>

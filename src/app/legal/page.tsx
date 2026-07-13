@@ -43,7 +43,7 @@ export default function LegalDemoPage() {
           <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Your client pipeline,\nbuilt for legal professionals</h1>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10">Track prospects, consultations, retainers, and cases. Log every call and meeting. Built for law firms — not generic salespeople.</p>
           <Link href="/login?mode=signup&industry=legal" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-10 py-4 rounded-xl transition">Start your free 14-day trial →</Link>
-          <p className="text-sm text-slate-500 mt-4">No credit card required · Set up in 2 minutes</p>
+          <p className="text-sm text-slate-500 mt-4">Free 14-day trial · Set up in 2 minutes</p>
         </div>
       </section>
       <section className="py-16 px-6 bg-slate-50">
@@ -106,10 +106,10 @@ export default function LegalDemoPage() {
       <section className="bg-slate-900 py-20 px-6">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to grow your practice?</h2>
-          <p className="text-slate-400 text-lg mb-8">Start your free 14-day trial. No credit card required.</p>
+          <p className="text-slate-400 text-lg mb-8">Start your free 14-day trial. No charge until it ends.</p>
           <Link href="/login?mode=signup&industry=legal" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-10 py-4 rounded-xl transition">Start free trial →</Link>
           <div className="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
-            <span>✓ 14 days free</span><span>✓ No credit card</span><span>✓ Cancel anytime</span>
+            <span>✓ 14 days free</span><span>✓ No charge for 14 days</span><span>✓ Cancel anytime</span>
           </div>
         </div>
       </section>

@@ -85,7 +85,7 @@ export default function JoinPage() {
               { icon: "💰", title: "Multiple Price Points", desc: "Solo $29/mo, Team $79/mo, Business $149/mo. Bigger clients = bigger commissions." },
               { icon: "🚀", title: "Ground Floor Opportunity", desc: "Get in early. Be one of the first reps as PipeDesk grows across 18 industries nationwide." },
               { icon: "🏠", title: "Work From Anywhere", desc: "100% remote. Sell via phone, email, LinkedIn, or in-person. Your schedule, your terms." },
-              { icon: "📱", title: "Free Trial Closes Deals", desc: "14-day free trial means no credit card needed to start. The easiest close in sales." },
+              { icon: "📱", title: "Free Trial Closes Deals", desc: "14-day free trial with no charge until day 14 — an easy, low-pressure close." },
             ].map((f) => (
               <div key={f.title} className="flex gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
                 <div className="text-3xl">{f.icon}</div>

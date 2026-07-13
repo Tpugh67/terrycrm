@@ -43,8 +43,6 @@ function LoginForm() {
     const industry = searchParams.get("industry") || "";
     const plan = searchParams.get("plan") || "solo";
 
-    // Referral attribution: pull whatever ref code ReferralCapture stored
-    // when this visitor first landed on a rep's link.
     let refCode: string | null = null;
     try {
       refCode = localStorage.getItem(REF_STORAGE_KEY);
@@ -64,9 +62,6 @@ function LoginForm() {
       });
 
       if (refCode) {
-        // Server-side: looks up the rep by ref_code and creates a pending
-        // commission record. Runs with the service role key so we don't
-        // need to expose rep contact info via RLS to unauthenticated visitors.
         try {
           await fetch("/api/track-referral", {
             method: "POST",
@@ -74,7 +69,7 @@ function LoginForm() {
             body: JSON.stringify({ userId: signUpData.user.id, refCode }),
           });
         } catch {
-          // Non-fatal — don't block signup if attribution fails.
+          // Non-fatal
         }
         try {
           localStorage.removeItem(REF_STORAGE_KEY);
@@ -119,7 +114,7 @@ function LoginForm() {
           {mode==="signup"&&(
             <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-5 text-center">
               <div className="text-sm font-bold text-blue-800">🎉 Start your free 14-day trial</div>
-              <div className="text-xs text-blue-600 mt-0.5">No credit card required · Cancel anytime</div>
+              <div className="text-xs text-blue-600 mt-0.5">Not charged for 14 days · Cancel anytime</div>
             </div>
           )}
           <form onSubmit={mode==="login"?handleLogin:handleSignup} className="space-y-4">

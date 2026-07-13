@@ -56,7 +56,7 @@ export default function LandingPage() {
           <a href="#industries" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-8 py-4 rounded-xl transition w-full sm:w-auto text-center">👇 Choose your industry</a>
           <Link href="/login?mode=signup" className="text-slate-600 hover:text-slate-900 font-medium text-base px-8 py-4 rounded-xl border border-slate-200 hover:border-slate-300 transition w-full sm:w-auto text-center">Start free trial →</Link>
         </div>
-        <p className="text-xs text-slate-400">No credit card required · 14-day free trial · Cancel anytime</p>
+        <p className="text-xs text-slate-400">No charge for 14 days · Cancel anytime</p>
         <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto mt-16 pt-16 border-t border-slate-100">
           {[{value:"18",label:"Industries supported"},{value:"$29",label:"Per month to start"},{value:"14",label:"Day free trial"}].map((s)=>(
             <div key={s.label}><div className="text-3xl font-bold text-slate-900">{s.value}</div><div className="text-xs text-slate-400 mt-1">{s.label}</div></div>
@@ -107,7 +107,7 @@ export default function LandingPage() {
           <h2 className="text-4xl font-bold text-slate-900 mb-6">Ready to close more deals?</h2>
           <p className="text-xl text-slate-500 mb-10">Join professionals across 18 industries using PipeDesk to manage their pipeline and never miss a follow-up.</p>
           <Link href="/login?mode=signup" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-10 py-5 rounded-xl transition">Start your free 14-day trial →</Link>
-          <p className="text-sm text-slate-400 mt-4">No credit card required · Set up in under 2 minutes</p>
+          <p className="text-sm text-slate-400 mt-4">Free 14-day trial · Set up in under 2 minutes</p>
         </div>
       </section>
 
@@ -137,7 +137,7 @@ function PricingSection() {
       <div className="max-w-4xl mx-auto px-6">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-slate-900 mb-4">Simple, honest pricing</h2>
-          <p className="text-slate-500 text-lg mb-8">Start free for 14 days. No credit card required.</p>
+          <p className="text-slate-500 text-lg mb-8">Start free for 14 days. No charge until your trial ends.</p>
           <div className="inline-flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1">
             <button onClick={()=>setAnnual(false)} className={`px-5 py-2 rounded-lg text-sm font-semibold transition ${!annual?"bg-slate-900 text-white":"text-slate-500 hover:text-slate-900"}`}>Monthly</button>
             <button onClick={()=>setAnnual(true)} className={`px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${annual?"bg-slate-900 text-white":"text-slate-500 hover:text-slate-900"}`}>Annual<span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Save 20%</span></button>
@@ -162,7 +162,7 @@ function PricingSection() {
             <Link href="/login?mode=signup" className="block text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition">Start free trial</Link>
           </div>
         </div>
-        <p className="text-center text-sm text-slate-400 mt-8">Both plans include a 14-day free trial · No credit card required · Cancel anytime</p>
+        <p className="text-center text-sm text-slate-400 mt-8">Both plans include a 14-day free trial · No charge until it ends · Cancel anytime</p>
       </div>
     </section>
   );

@@ -117,7 +117,7 @@ export default function PricingPage() {
 
       <section className="py-20 px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Simple, transparent pricing</h1>
-        <p className="text-xl text-slate-500 mb-10">Start free for 14 days. No credit card required.</p>
+        <p className="text-xl text-slate-500 mb-10">Start free for 14 days. No charge until your trial ends.</p>
         
         <div className="inline-flex items-center gap-3 bg-slate-100 rounded-full p-1 mb-12">
           <button onClick={() => setAnnual(false)} className={`px-5 py-2 rounded-full text-sm font-semibold transition ${!annual ? "bg-white shadow text-slate-900" : "text-slate-500"}`}>Monthly</button>
@@ -168,7 +168,7 @@ export default function PricingPage() {
                 </a>
               )}
               <p className="text-xs text-slate-400 text-center mt-3">
-                {plan.monthly ? "14-day free trial · No credit card" : "Custom contract · White glove setup"}
+                {plan.monthly ? "14-day free trial · No charge for 14 days" : "Custom contract · White glove setup"}
               </p>
             </div>
           ))}
@@ -199,10 +199,10 @@ export default function PricingPage() {
       <section className="bg-slate-900 py-20 px-6">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to close more deals?</h2>
-          <p className="text-slate-400 text-lg mb-8">Start your free 14-day trial. No credit card required.</p>
+          <p className="text-slate-400 text-lg mb-8">Start your free 14-day trial. No charge until it ends.</p>
           <Link href="/login?mode=signup" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-10 py-4 rounded-xl transition">Start free trial →</Link>
           <div className="mt-6 flex items-center justify-center gap-6 text-sm text-slate-500">
-            <span>✓ 14 days free</span><span>✓ No credit card</span><span>✓ Cancel anytime</span>
+            <span>✓ 14 days free</span><span>✓ No charge for 14 days</span><span>✓ Cancel anytime</span>
           </div>
         </div>
       </section>
