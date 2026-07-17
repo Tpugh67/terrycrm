@@ -4,6 +4,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { REF_STORAGE_KEY } from "../../components/ReferralCapture";
 
+declare global {
+  interface Window {
+    Uppercut?: { signup: (email: string) => void };
+  }
+}
+
+function trackUppercutSignup(email: string) {
+  try {
+    window.Uppercut?.signup(email);
+  } catch {
+    // Non-fatal — never block signup on a third-party tracking failure.
+  }
+}
+
+
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -113,6 +129,8 @@ function LoginForm() {
         trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         role: resolvedRole,
       });
+
+      trackUppercutSignup(email);
 
       if (refCode) {
         try {
