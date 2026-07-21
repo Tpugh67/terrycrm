@@ -27,8 +27,14 @@ type SectionBackground = "surface" | "alt" | "dark" | "gradient";
 const BG_CLASSES: Record<SectionBackground, string> = {
   surface: "bg-(--color-surface)",
   alt: "bg-(--color-surface-alt)",
-  dark: "bg-[var(--gradient-dark)] text-white",
-  gradient: "bg-[var(--gradient-pipeline)] text-white",
+  // bg-[var(...)] compiles to `background-color`, which silently
+  // rejects gradient values (invalid CSS) — the browser drops the
+  // declaration entirely rather than erroring, so this rendered as no
+  // background at all, with white heading text on the page's default
+  // white background (invisible). bg-[image:var(...)] explicitly
+  // targets `background-image`, which does accept gradients.
+  dark: "bg-[image:var(--gradient-dark)] text-white",
+  gradient: "bg-[image:var(--gradient-pipeline)] text-white",
 };
 
 /**
