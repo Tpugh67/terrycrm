@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { getAuthHeaders } from "../lib/authHeader";
 
 type Deal = {
   title: string;
@@ -68,7 +69,7 @@ export default function DealAI({ deal, notes }: { deal: Deal; notes: string }) {
     try {
       const res = await fetch("/api/ai", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
         body: JSON.stringify({ prompt: action.prompt(deal, notes) }),
       });
       const data = await res.json();

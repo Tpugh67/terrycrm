@@ -1,26 +1,258 @@
 @import "tailwindcss";
 
+/* ============================================================
+   PIPEDESK BRAND SYSTEM
+   Design tokens — single source of truth for color, type,
+   spacing, radius, shadow, gradient, and motion across the app.
+   Every page should reference these tokens rather than picking
+   ad-hoc Tailwind utility colors.
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ---- Brand color ---- */
+  --color-primary: #2e3192;        /* Pipeline Indigo — primary brand color */
+  --color-primary-hover: #252978;
+  --color-primary-light: #eef0fb;  /* tinted surface for primary-on-light */
+
+  --color-secondary: #0f1b4c;      /* Deep Slate Navy — dark sections, headers */
+  --color-secondary-hover: #16265f;
+
+  --color-accent: #ff6b4a;         /* Momentum Coral — CTAs, hot/urgent signals */
+  --color-accent-hover: #e85a3b;
+  --color-accent-light: #fff1ee;
+  --color-accent-text: #b5390f;    /* WCAG AA-safe text color for use on accent-light tint backgrounds — raw --color-accent measured 2.56:1 there, failing */
+
+  /* ---- Semantic color ---- */
+  --color-success: #16a34a;
+  --color-success-light: #ecfdf3;
+  --color-success-text: #15803d;   /* WCAG AA-safe text color for use on -light tint backgrounds */
+  --color-warning: #f59e0b;
+  --color-warning-light: #fffbeb;
+  --color-warning-text: #92400e;
+  --color-danger: #dc2626;
+  --color-danger-light: #fef2f2;
+  --color-danger-text: #b91c1c;
+  --color-info: #2563eb;
+  --color-info-light: #eff6ff;
+  --color-info-text: #1d4ed8;
+
+  /* ---- Neutrals / surfaces ---- */
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f6f6fc;    /* indigo-tinted alt section background */
+  --color-surface-sunken: #f1f2f9;
+  --color-border: #e3e4f0;
+  --color-border-strong: #cbcde3;
+  --color-foreground: #12142b;     /* near-black, indigo-tinted for headings */
+  --color-foreground-muted: #5b5e78;
+  --color-foreground-subtle: #6b6e88; /* darkened from #8b8ea8 — that shade measured 3.21:1 on white, failing WCAG AA for the caption-sized text it's used for; this passes at 4.99:1 */
+
+  /* ---- Gradients ---- */
+  --gradient-pipeline: linear-gradient(135deg, #2e3192 0%, #4c51d6 55%, #ff6b4a 100%);
+  --gradient-dark: linear-gradient(180deg, #0f1b4c 0%, #1b2461 100%);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f6f6fc 100%);
+
+  /* ---- Radius scale (2xl / 24px is the signature PipeDesk card radius) ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ---- Shadow scale — soft, tinted toward primary rather than pure black ---- */
+  --shadow-sm: 0 1px 2px rgba(46, 49, 146, 0.06);
+  --shadow-md: 0 4px 12px rgba(46, 49, 146, 0.08);
+  --shadow-lg: 0 12px 32px rgba(46, 49, 146, 0.12);
+  --shadow-xl: 0 24px 64px rgba(46, 49, 146, 0.16);
+
+  /* ---- Container widths ---- */
+  --container-narrow: 48rem;   /* 768px — long-form text */
+  --container-form: 28rem;     /* 448px — forms/modals */
+  --container-content: 72rem;  /* 1152px — standard sections */
+  --container-wide: 80rem;     /* 1280px — wide marketing sections */
+
+  /* ---- Motion ---- */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* ---- Fonts (wired up via next/font in layout.tsx) ---- */
+  --font-display: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* ---- Dark theme tokens — prepared, not yet wired to a UI toggle.
+   Architecture is ready: flip by setting data-theme="dark" on <html>. ---- */
+[data-theme="dark"] {
+  --color-background: #0f1220;
+  --color-surface: #171a2e;
+  --color-surface-alt: #1b1e36;
+  --color-surface-sunken: #10121f;
+  --color-border: #2a2d47;
+  --color-border-strong: #383c5e;
+  --color-foreground: #f4f4fa;
+  --color-foreground-muted: #a4a6c2;
+  --color-foreground-subtle: #6f7292;
+  --color-primary-light: #1c1f3f;
+  --color-accent-light: #2c1f1c;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* Numbers, money, stage codes, and other data render in mono everywhere —
+   this is the deliberate PipeDesk "signature" typographic tell. */
+.pd-numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Typography scale — reference these instead of arbitrary text-* + tracking combos ---- */
+.pd-text-display {  /* hero headlines */
+  font-family: var(--font-display);
+  font-size: 3.75rem;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+@media (min-width: 768px) {
+  .pd-text-display { font-size: 4.5rem; }
+}
+.pd-text-h1 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+.pd-text-h2 {
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+.pd-text-h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+.pd-text-body-lg {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--color-foreground-muted);
+}
+.pd-text-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-foreground-muted);
+}
+.pd-text-caption {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--color-foreground-subtle);
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   MOTION SYSTEM
+   Subtle, professional. Fully disabled under reduced-motion.
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes pd-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pd-slide-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pd-reveal {
+    from { opacity: 0; transform: translateY(24px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes pd-scale-in {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pd-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes pd-flow {
+    to { stroke-dashoffset: -20; }
+  }
+  @keyframes pd-gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .pd-animate-fade-in { animation: pd-fade-in var(--duration-slow) var(--ease-out) both; }
+  .pd-animate-slide-up { animation: pd-slide-up var(--duration-slow) var(--ease-out) both; }
+  .pd-animate-reveal { animation: pd-reveal var(--duration-slow) var(--ease-standard) both; }
+  .pd-animate-scale-in { animation: pd-scale-in var(--duration-slow) var(--ease-out) both; }
+  .pd-animate-float { animation: pd-float 5s var(--ease-standard) infinite; }
+  .pd-animate-flow { animation: pd-flow 1.2s linear infinite; }
+  .pd-animate-gradient {
+    background-size: 200% 200%;
+    animation: pd-gradient-shift 8s ease-in-out infinite;
+  }
+  .pd-hover-lift {
+    transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
+  }
+  .pd-hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-animate-fade-in, .pd-animate-slide-up, .pd-animate-reveal, .pd-animate-scale-in, .pd-animate-float, .pd-animate-flow, .pd-animate-gradient {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   ACCESSIBILITY BASELINE
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.pd-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--color-primary);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0 0 var(--radius-md) 0;
+  font-weight: 600;
+}
+.pd-skip-link:focus {
+  left: 0;
 }

@@ -1,0 +1,45 @@
+import Link from "next/link";
+import { Container } from "../ui/Container";
+import Button from "../ui/Button";
+
+export type NavLink = { label: string; href: string };
+
+export default function PublicHeader({
+  links = [
+    { label: "Industries", href: "#industries" },
+    { label: "Features", href: "#features" },
+    { label: "Pricing", href: "#pricing" },
+  ],
+}: {
+  links?: NavLink[];
+}) {
+  return (
+    <header className="border-b border-(--color-border) sticky top-0 bg-(--color-surface)/95 backdrop-blur z-50">
+      <Container width="wide" className="flex items-center justify-between py-4">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-[var(--radius-md)] bg-(--color-primary) flex items-center justify-center text-white text-xs font-bold">
+            PD
+          </div>
+          <span className="pd-text-h3 text-base">PipeDesk</span>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-8 text-sm text-(--color-foreground-muted)">
+          {links.map((link) => (
+            <a key={link.href} href={link.href} className="hover:text-(--color-foreground) transition-colors">
+              {link.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <Link href="/login" className="text-sm font-medium text-(--color-foreground-muted) hover:text-(--color-foreground) transition-colors hidden sm:block">
+            Log in
+          </Link>
+          <Button href="/login?mode=signup" size="sm">
+            Start free trial
+          </Button>
+        </div>
+      </Container>
+    </header>
+  );
+}

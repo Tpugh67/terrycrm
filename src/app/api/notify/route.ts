@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendAdminNotification } from "../../../lib/email";
 
-type NotifyType = "signup" | "rep_application" | "affiliate_application" | "agency_application";
+type NotifyType = "signup" | "rep_application" | "affiliate_application" | "agency_application" | "contact";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     switch (type) {
       case "signup":
-        subject = `🎉 New PipeDesk signup: ${data.email}`;
+        subject = `New PipeDesk signup: ${data.email}`;
         html = `
           <h2>New trial signup</h2>
           <p><strong>Email:</strong> ${data.email}</p>
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
         break;
 
       case "rep_application":
-        subject = `🤝 New sales rep application: ${data.name}`;
+        subject = `New sales rep application: ${data.name}`;
         html = `
           <h2>New sales rep application</h2>
           <p><strong>Name:</strong> ${data.name}</p>
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         break;
 
       case "affiliate_application":
-        subject = `📣 New affiliate application: ${data.name}`;
+        subject = `New affiliate application: ${data.name}`;
         html = `
           <h2>New affiliate application</h2>
           <p><strong>Name:</strong> ${data.name}</p>
@@ -45,13 +45,25 @@ export async function POST(req: NextRequest) {
         break;
 
       case "agency_application":
-        subject = `🏢 New agency partner application: ${data.agencyName}`;
+        subject = `New agency partner application: ${data.agencyName}`;
         html = `
           <h2>New agency partner application</h2>
           <p><strong>Agency:</strong> ${data.agencyName}</p>
           <p><strong>Contact:</strong> ${data.name}</p>
           <p><strong>Email:</strong> ${data.email}</p>
           <p><strong>Estimated clients:</strong> ${data.clientCount || "not provided"}</p>
+        `;
+        break;
+
+      case "contact":
+        subject = `New contact form message: ${data.topic || "General"} — ${data.name}`;
+        html = `
+          <h2>New contact form message</h2>
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Topic:</strong> ${data.topic || "not specified"}</p>
+          <p><strong>Message:</strong></p>
+          <p>${(data.message || "").replace(/\n/g, "<br>")}</p>
         `;
         break;
 

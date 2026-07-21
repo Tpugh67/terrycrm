@@ -36,6 +36,16 @@ function LoginForm() {
     if (searchParams.get("mode") === "signup") setMode("signup");
   }, [searchParams]);
 
+  // Previously handled by AuthGate wrapping every page including /login.
+  // Now that /login sits outside the (app) route group (see
+  // docs/adr/0001-public-app-layout-split.md), this page is responsible
+  // for its own "already signed in" redirect.
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/dashboard");
+    });
+  }, [router]);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {

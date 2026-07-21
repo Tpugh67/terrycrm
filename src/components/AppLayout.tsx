@@ -2,27 +2,26 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Search as SearchIcon, X as XIcon } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import WelcomeModal from "./WelcomeModal";
 import OnboardingChecklist from "./OnboardingChecklist";
+import GlobalSearch from "./GlobalSearch";
 
-const PUBLIC_PATHS = ["/", "/login", "/pricing", "/rep-portal", "/reps",
-  "/partners", "/affiliate/apply", "/affiliate/dashboard", "/agency/apply",
-  "/real-estate", "/insurance", "/mortgage", "/auto", "/solar",
-  "/financial", "/legal", "/recruiting", "/healthcare", "/construction",
-  "/consulting", "/ecommerce", "/property-management", "/trucking",
-  "/dental", "/fitness", "/nonprofit", "/education"];
+// No PUBLIC_PATHS list here anymore — this component only ever mounts
+// inside (app)/(shell)/layout.tsx (see docs/adr/0001-public-app-layout-split.md),
+// so every page that reaches it is, by construction, meant to have the
+// sidebar shell. rep-portal and affiliate/dashboard, which want auth but
+// not this shell, live outside the (shell) group entirely and never
+// import this component.
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard", "/contacts": "Contacts", "/pipeline": "Pipeline",
   "/tasks": "Tasks", "/settings": "Settings", "/admin/reps": "Rep Applications",
-  "/help": "Help Center", "/partners": "Partners",
-  "/affiliate/apply": "Affiliate Application", "/affiliate/dashboard": "Affiliate Dashboard",
   "/reports": "Admin Command Center",
   "/admin/affiliates": "Affiliate Applications",
 };
 
-// ─── ADMIN SIDEBAR ────────────────────────────────────────────────────────────
 const ADMIN_NAV = [
   { section: "HOME", items: [
     { href: "/dashboard", icon: "📊", label: "Dashboard" },
@@ -48,7 +47,6 @@ const ADMIN_NAV = [
   ]},
 ];
 
-// ─── CUSTOMER SIDEBAR ─────────────────────────────────────────────────────────
 const CUSTOMER_NAV = [
   { section: "GENERAL", items: [
     { href: "/dashboard", icon: "📊", label: "Dashboard" },
@@ -64,7 +62,6 @@ const CUSTOMER_NAV = [
   ]},
 ];
 
-// ─── SDR SIDEBAR ──────────────────────────────────────────────────────────────
 const REP_NAV = [
   { section: "SALES", items: [
     { href: "/dashboard", icon: "📊", label: "Dashboard" },
@@ -81,7 +78,6 @@ const REP_NAV = [
   ]},
 ];
 
-// ─── AFFILIATE SIDEBAR ────────────────────────────────────────────────────────
 const AFFILIATE_NAV = [
   { section: "AFFILIATE", items: [
     { href: "/affiliate/dashboard", icon: "📊", label: "Dashboard" },
@@ -117,7 +113,9 @@ const INDUSTRIES = [
   { href: "/education", code: "ED", label: "Education", color: "bg-indigo-500" },
 ];
 
-function getNavByRole(role: string) {
+type NavSection = { section: string; items: { href: string; icon: string; label: string }[] };
+
+function getNavByRole(role: string): NavSection[] {
   switch (role) {
     case "admin": return ADMIN_NAV;
     case "rep": return REP_NAV;
@@ -144,49 +142,40 @@ function getRoleBadgeColor(role: string) {
   }
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const isPublic = PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/affiliate");
-  const [userEmail, setUserEmail] = useState("");
-  const [userInitials, setUserInitials] = useState("?");
-  const [userIndustry, setUserIndustry] = useState("");
-  const [userRole, setUserRole] = useState("user");
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [industriesOpen, setIndustriesOpen] = useState(false);
-  const isIndustryPage = INDUSTRIES.some(i => i.href === pathname);
-  useEffect(() => { if (isIndustryPage) setIndustriesOpen(true); }, [pathname]);
-
-  useEffect(() => {
-    async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        setUserEmail(user.email);
-        setUserInitials(user.email.slice(0, 2).toUpperCase());
-        const { data: profile } = await supabase.from("profiles").select("industry, role").eq("id", user.id).single();
-        if (profile?.industry) setUserIndustry(profile.industry);
-        if (profile?.role) setUserRole(profile.role);
-      }
-    }
-    loadUser();
-  }, []);
-
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
-
-  if (isPublic) return <>{children}</>;
-
-  const pageTitle = PAGE_TITLES[pathname] || "Workspace";
-  const navSections = getNavByRole(userRole);
-  const roleLabel = getRoleLabel(userRole);
-  const roleBadgeColor = getRoleBadgeColor(userRole);
-  const showIndustries = userRole === "admin" || userRole === "user";
-
-  const SidebarContent = () => (
+// Extracted to a real top-level component (was previously defined inside
+// AppLayout's render body, which resets its internal state on every
+// AppLayout re-render — a real bug flagged in the Pass 4 performance
+// review, fixed here).
+function SidebarContent({
+  pathname,
+  navSections,
+  roleLabel,
+  roleBadgeColor,
+  showIndustries,
+  industriesOpen,
+  setIndustriesOpen,
+  userIndustry,
+  userInitials,
+  userEmail,
+  onNavigate,
+  onLogout,
+  onCloseMobile,
+}: {
+  pathname: string;
+  navSections: NavSection[];
+  roleLabel: string;
+  roleBadgeColor: string;
+  showIndustries: boolean;
+  industriesOpen: boolean;
+  setIndustriesOpen: (open: boolean) => void;
+  userIndustry: string;
+  userInitials: string;
+  userEmail: string;
+  onNavigate: () => void;
+  onLogout: () => void;
+  onCloseMobile: () => void;
+}) {
+  return (
     <div className="flex flex-col h-full">
       <div className="px-5 py-5 border-b border-slate-800">
         <div className="flex items-center justify-between">
@@ -197,7 +186,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className={"text-[10px] mt-0.5 font-semibold " + roleBadgeColor}>{roleLabel}</div>
             </div>
           </div>
-          <button onClick={() => setMobileOpen(false)} className="lg:hidden text-slate-400 hover:text-white p-1">✕</button>
+          <button onClick={onCloseMobile} className="lg:hidden text-slate-400 hover:text-white p-1">✕</button>
         </div>
       </div>
 
@@ -208,7 +197,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {section.items.map((item) => {
               const active = pathname === item.href;
               return (
-                <Link key={item.href + item.label} href={item.href} onClick={() => setMobileOpen(false)}
+                <Link key={item.href + item.label} href={item.href} onClick={onNavigate}
                   className={"flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition " + (active ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white")}>
                   <span className="text-base">{item.icon}</span>
                   <span>{item.label}</span>
@@ -229,7 +218,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {industriesOpen && INDUSTRIES.filter(ind => !userIndustry || ind.href === "/" + userIndustry).map((ind) => {
               const active = pathname === ind.href;
               return (
-                <Link key={ind.href} href={ind.href} onClick={() => setMobileOpen(false)}
+                <Link key={ind.href} href={ind.href} onClick={onNavigate}
                   className={"flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition " + (active ? "bg-slate-800 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white")}>
                   <span className={"w-5 h-5 rounded " + ind.color + " flex items-center justify-center text-[9px] font-bold flex-shrink-0 text-white"}>{ind.code}</span>
                   <span className="truncate text-xs">{ind.label}</span>
@@ -240,7 +229,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
 
         <div className="pt-2">
-          <button onClick={handleLogout} className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition text-red-400 hover:bg-red-900/20 hover:text-red-300">
+          <button onClick={onLogout} className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition text-red-400 hover:bg-red-900/20 hover:text-red-300">
             <span>🚪</span><span>Logout</span>
           </button>
         </div>
@@ -257,41 +246,125 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState("");
+  const [userInitials, setUserInitials] = useState("?");
+  const [userIndustry, setUserIndustry] = useState("");
+  const [userRole, setUserRole] = useState("user");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [industriesOpen, setIndustriesOpen] = useState(false);
+  const isIndustryPage = INDUSTRIES.some(i => i.href === pathname);
+
+  // Adjusting state in response to a changed prop (pathname), following
+  // React's documented "adjust state during render" pattern instead of
+  // an Effect — avoids the cascading-render anti-pattern flagged in the
+  // Pass 4 performance review (react-hooks/set-state-in-effect) while
+  // still resetting on every real navigation.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMobileOpen(false);
+    setMobileSearchOpen(false);
+    if (isIndustryPage) setIndustriesOpen(true);
+  }
+
+  useEffect(() => {
+    async function loadUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setUserEmail(user.email);
+        setUserInitials(user.email.slice(0, 2).toUpperCase());
+        const { data: profile } = await supabase.from("profiles").select("industry, role").eq("id", user.id).single();
+        if (profile?.industry) setUserIndustry(profile.industry);
+        if (profile?.role) setUserRole(profile.role);
+      }
+    }
+    loadUser();
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
+
+  const pageTitle = PAGE_TITLES[pathname] || "Workspace";
+  const navSections = getNavByRole(userRole);
+  const roleLabel = getRoleLabel(userRole);
+  const roleBadgeColor = getRoleBadgeColor(userRole);
+  const showIndustries = userRole === "admin" || userRole === "user";
+
+  const sidebarProps = {
+    pathname,
+    navSections,
+    roleLabel,
+    roleBadgeColor,
+    showIndustries,
+    industriesOpen,
+    setIndustriesOpen,
+    userIndustry,
+    userInitials,
+    userEmail,
+    onNavigate: () => setMobileOpen(false),
+    onLogout: handleLogout,
+    onCloseMobile: () => setMobileOpen(false),
+  };
 
   return (
     <div className="min-h-screen flex bg-slate-100">
       <aside className="hidden lg:flex w-64 bg-slate-950 text-white flex-col border-r border-slate-800 fixed h-full z-20">
-        <SidebarContent />
+        <SidebarContent {...sidebarProps} />
       </aside>
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex">
           <div className="fixed inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
           <aside className="relative w-72 bg-slate-950 text-white flex flex-col h-full z-50 shadow-2xl">
-            <SidebarContent />
+            <SidebarContent {...sidebarProps} />
           </aside>
         </div>
       )}
       <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
-        <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(true)} className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 transition">
-              <div className="w-5 h-0.5 bg-slate-600 mb-1" />
-              <div className="w-5 h-0.5 bg-slate-600 mb-1" />
-              <div className="w-5 h-0.5 bg-slate-600" />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 hidden sm:block">PipeDesk</span>
-              <span className="text-slate-300 hidden sm:block">/</span>
-              <span className="text-sm font-semibold text-slate-800">{pageTitle}</span>
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setMobileOpen(true)} className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 transition">
+                <div className="w-5 h-0.5 bg-slate-600 mb-1" />
+                <div className="w-5 h-0.5 bg-slate-600 mb-1" />
+                <div className="w-5 h-0.5 bg-slate-600" />
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400 hidden sm:block">PipeDesk</span>
+                <span className="text-slate-300 hidden sm:block">/</span>
+                <span className="text-sm font-semibold text-slate-800">{pageTitle}</span>
+              </div>
+            </div>
+            <div className="hidden md:block flex-1 max-w-xs mx-4">
+              <GlobalSearch />
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileSearchOpen((v) => !v)}
+                aria-label={mobileSearchOpen ? "Close search" : "Search"}
+                className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 transition text-slate-600"
+              >
+                {mobileSearchOpen ? <XIcon size={18} /> : <SearchIcon size={18} />}
+              </button>
+              <div className={"text-xs font-bold px-2 py-1 rounded-full " + (userRole === "admin" ? "bg-amber-100 text-amber-700" : userRole === "rep" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600")}>{roleLabel}</div>
+              <div className="text-xs text-slate-400 hidden md:block">{userEmail}</div>
+              <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{userInitials}</div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className={"text-xs font-bold px-2 py-1 rounded-full " + (userRole === "admin" ? "bg-amber-100 text-amber-700" : userRole === "rep" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600")}>{roleLabel}</div>
-            <div className="text-xs text-slate-400 hidden md:block">{userEmail}</div>
-            <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{userInitials}</div>
-          </div>
+          {mobileSearchOpen && (
+            <div className="md:hidden px-4 pb-3">
+              <GlobalSearch />
+            </div>
+          )}
         </header>
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <main id="pd-main" className="flex-1 p-4 md:p-6 overflow-auto">
           {children}
         </main>
       </div>
