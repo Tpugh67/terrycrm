@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container } from "../ui/Container";
 import Button from "../ui/Button";
+import Logo from "../Logo";
 
 export type NavLink = { label: string; href: string };
 
@@ -17,10 +18,7 @@ export default function PublicHeader({
     <header className="border-b border-(--color-border) sticky top-0 bg-(--color-surface)/95 backdrop-blur z-50">
       <Container width="wide" className="flex items-center justify-between py-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-[var(--radius-md)] bg-(--color-primary) flex items-center justify-center text-white text-xs font-bold">
-            PD
-          </div>
-          <span className="pd-text-h3 text-base">PipeDesk</span>
+          <Logo size={32} withWordmark wordmarkClassName="pd-text-h3 text-base" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm text-(--color-foreground-muted)">

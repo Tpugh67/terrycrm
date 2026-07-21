@@ -48,16 +48,9 @@ export default function AgencyApplyPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <nav className="border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 bg-white z-50">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">PD</div>
-          <span className="text-lg font-bold text-slate-900 tracking-tight">PipeDesk</span>
-        </Link>
-        <Link href="/partners" className="text-sm text-slate-500 hover:text-slate-900 transition">← Back to Partners</Link>
-      </nav>
-
       <section className="bg-slate-900 text-white py-16 px-6">
         <div className="max-w-2xl mx-auto text-center">
+          <Link href="/partners" className="inline-block text-sm text-slate-400 hover:text-white transition mb-6">← Back to Partners</Link>
           <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-400 text-xs font-semibold px-4 py-2 rounded-full mb-6 border border-amber-500/30">
             🏢 Agency Partner Program
           </div>
@@ -146,13 +139,6 @@ export default function AgencyApplyPage() {
           )}
         </div>
       </section>
-
-      <footer className="border-t border-slate-800 bg-slate-900 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <span className="font-bold text-white">PipeDesk</span>
-          <span className="text-sm text-slate-500">Questions? Email hello@pipedesk.app</span>
-        </div>
-      </footer>
     </div>
   );
 }

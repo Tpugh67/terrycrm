@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 import { getAuthHeaders } from "../../../lib/authHeader";
+import Logo from "../../../components/Logo";
 
 type Rep = {
   id: string;
@@ -160,7 +161,7 @@ export default function RepPortalPage() {
       {/* Header */}
       <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">PD</div>
+          <Logo size={32} />
           <div>
             <div className="font-bold text-sm">PipeDesk Rep Portal</div>
             <div className="text-xs text-slate-400">{rep.name} · {rep.email}</div>

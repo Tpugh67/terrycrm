@@ -1,17 +1,13 @@
 import Link from "next/link";
 import { Container } from "../ui/Container";
+import Logo from "../Logo";
 
 export default function PublicFooter() {
   return (
     <footer className="border-t border-(--color-border) py-10">
       <Container width="wide" className="flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-[var(--radius-sm)] bg-(--color-primary) flex items-center justify-center text-white text-[10px] font-bold">
-              PD
-            </div>
-            <span className="font-semibold text-sm">PipeDesk</span>
-          </div>
+          <Logo size={24} withWordmark wordmarkClassName="font-semibold text-sm" />
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-(--color-foreground-muted)">
             <Link href="/about" className="hover:text-(--color-foreground) transition-colors">About</Link>
             <Link href="/pricing" className="hover:text-(--color-foreground) transition-colors">Pricing</Link>
