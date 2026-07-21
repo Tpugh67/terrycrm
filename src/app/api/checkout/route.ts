@@ -6,6 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-04
 const PRICES = {
   solo: "price_1TT1CDANf6sspitdbeYGjnih",
   team: "price_1TT1CDANf6sspitdK6JFF3uq",
+  business: "price_1Tb6URANf6sspitdGKpMBFJy",
 };
 
 export async function POST(req: NextRequest) {
@@ -24,7 +25,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Checkout failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

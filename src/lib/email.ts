@@ -7,25 +7,29 @@ const ADMIN_EMAIL = "hello@pipedesk.app";
 const FROM_ADDRESS = "PipeDesk Alerts <notifications@pipedesk.app>";
 
 export async function sendAdminNotification(subject: string, html: string) {
+  return sendEmail(ADMIN_EMAIL, subject, html);
+}
+
+/**
+ * Generic send — used wherever an email needs to go to someone other
+ * than the PipeDesk team (e.g. a rep's approval magic link). Shares the
+ * same lazy-construction and error-swallowing behavior as
+ * sendAdminNotification for the same reasons documented there.
+ */
+export async function sendEmail(to: string, subject: string, html: string) {
   try {
     if (!process.env.RESEND_API_KEY) {
-      // Not configured yet — skip silently rather than crash. The Resend
-      // constructor throws on a missing key, and constructing it at module
-      // scope would take down the entire build (Next.js evaluates route
-      // modules during "collect page data"), not just this one feature.
-      console.error("sendAdminNotification skipped: RESEND_API_KEY not set");
+      console.error("sendEmail skipped: RESEND_API_KEY not set");
       return;
     }
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: FROM_ADDRESS,
-      to: ADMIN_EMAIL,
+      to,
       subject,
       html,
     });
   } catch (err) {
-    // Never let a notification failure break the calling flow (signup,
-    // rep application, payment, etc.) — just log it.
-    console.error("sendAdminNotification failed:", err);
+    console.error("sendEmail failed:", err);
   }
 }
