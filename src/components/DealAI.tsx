@@ -40,10 +40,10 @@ const ACTIONS: Action[] = [
     prompt: (deal, notes) => `Summarize this CRM deal in 3-4 bullet points: Title: "${deal.title}", Seller: ${deal.seller}, Stage: ${deal.stage}, ARV: ${deal.arv || "N/A"}, Offer: ${deal.offer || "N/A"}, Fee: ${deal.amount || "N/A"}.${notes ? ` Activity notes: ${notes}` : ""} Include deal status, key numbers, and any risks or opportunities.`,
   },
   {
-    id: "probability",
-    label: "Predict close probability",
-    emoji: "🔮",
-    prompt: (deal, notes) => `You are a real estate wholesale CRM assistant. Based on: Deal: "${deal.title}", Stage: "${deal.stage}", ARV: ${deal.arv || "unknown"}, Offer: ${deal.offer || "none"}, Follow-up: ${deal.next_follow_up || "not set"}.${notes ? ` Notes: ${notes}` : ""} Give a close probability percentage and 2-3 sentence explanation of the key factors. Be honest and analytical.`,
+    id: "health",
+    label: "Assess deal health",
+    emoji: "🩺",
+    prompt: (deal, notes) => `You are a real estate wholesale CRM assistant. Based on: Deal: "${deal.title}", Stage: "${deal.stage}", ARV: ${deal.arv || "unknown"}, Offer: ${deal.offer || "none"}, Follow-up: ${deal.next_follow_up || "not set"}.${notes ? ` Notes: ${notes}` : ""} Do NOT state or imply any percentage or numeric probability of closing -- you have no statistical model to base one on. Instead, give a one-word qualitative health signal (Strong, Moderate, or Weak) based only on the real facts provided, followed by a 2-3 sentence explanation of the key factors driving that assessment. If there isn't enough information to make a reasonable assessment, say so explicitly instead of guessing.`,
   },
   {
     id: "objections",
