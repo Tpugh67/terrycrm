@@ -7,6 +7,7 @@ import { supabase } from "../lib/supabase";
 import WelcomeModal from "./WelcomeModal";
 import OnboardingChecklist from "./OnboardingChecklist";
 import GlobalSearch from "./GlobalSearch";
+import Logo from "./Logo";
 
 // No PUBLIC_PATHS list here anymore — this component only ever mounts
 // inside (app)/(shell)/layout.tsx (see docs/adr/0001-public-app-layout-split.md),
@@ -180,7 +181,7 @@ function SidebarContent({
       <div className="px-5 py-5 border-b border-slate-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">PD</div>
+            <Logo size={32} className="flex-shrink-0" />
             <div>
               <div className="text-base font-bold tracking-tight leading-none text-white">PipeDesk</div>
               <div className={"text-[10px] mt-0.5 font-semibold " + roleBadgeColor}>{roleLabel}</div>

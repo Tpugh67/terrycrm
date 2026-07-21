@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { REF_STORAGE_KEY } from "../../components/ReferralCapture";
+import Logo from "../../components/Logo";
 
 declare global {
   interface Window {
@@ -192,7 +193,7 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">PD</div>
+          <Logo size={64} className="mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-white">PipeDesk</h1>
           <p className="text-slate-400 mt-1">Multi-Industry CRM</p>
         </div>
