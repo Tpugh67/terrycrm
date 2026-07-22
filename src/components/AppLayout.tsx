@@ -74,6 +74,17 @@ const REP_NAV = [
     { href: "/rep-portal", icon: "🔗", label: "Referral Link" },
     { href: "/help", icon: "🎓", label: "Training" },
   ]},
+  { section: "SALES & MARKETING CENTER", items: [
+    { href: "/sales-marketing", icon: "🚀", label: "Overview" },
+    { href: "/sales-marketing/scripts", icon: "📞", label: "Sales Scripts" },
+    { href: "/sales-marketing/email-templates", icon: "✉️", label: "Email Templates" },
+    { href: "/sales-marketing/social-media", icon: "📱", label: "Social Media" },
+    { href: "/sales-marketing/battle-cards", icon: "⚔️", label: "Battle Cards" },
+    { href: "/sales-marketing/objections", icon: "💬", label: "Objection Library" },
+    { href: "/sales-marketing/demo-guide", icon: "🖥️", label: "Demo Guide" },
+    { href: "/sales-marketing/downloads", icon: "📥", label: "Downloads" },
+    { href: "/sales-marketing/faq", icon: "❓", label: "FAQ" },
+  ]},
   { section: "ACCOUNT", items: [
     { href: "/settings", icon: "⚙️", label: "Settings" },
   ]},
@@ -87,6 +98,17 @@ const AFFILIATE_NAV = [
   { section: "MARKETING", items: [
     { href: "/affiliate/dashboard", icon: "✨", label: "AI Content Generator" },
     { href: "/affiliate/dashboard", icon: "🎨", label: "Marketing Assets" },
+  ]},
+  { section: "SALES & MARKETING CENTER", items: [
+    { href: "/sales-marketing", icon: "🚀", label: "Overview" },
+    { href: "/sales-marketing/scripts", icon: "📞", label: "Sales Scripts" },
+    { href: "/sales-marketing/email-templates", icon: "✉️", label: "Email Templates" },
+    { href: "/sales-marketing/social-media", icon: "📱", label: "Social Media" },
+    { href: "/sales-marketing/battle-cards", icon: "⚔️", label: "Battle Cards" },
+    { href: "/sales-marketing/objections", icon: "💬", label: "Objection Library" },
+    { href: "/sales-marketing/demo-guide", icon: "🖥️", label: "Demo Guide" },
+    { href: "/sales-marketing/downloads", icon: "📥", label: "Downloads" },
+    { href: "/sales-marketing/faq", icon: "❓", label: "FAQ" },
   ]},
   { section: "ACCOUNT", items: [
     { href: "/settings", icon: "⚙️", label: "Settings" },
