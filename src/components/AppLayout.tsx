@@ -37,6 +37,17 @@ const ADMIN_NAV = [
     { href: "/admin/affiliates", icon: "📣", label: "Affiliates" },
     { href: "/partners", icon: "🏢", label: "Partners" },
   ]},
+  { section: "SALES & MARKETING CENTER", items: [
+    { href: "/sales-marketing", icon: "🚀", label: "Overview" },
+    { href: "/sales-marketing/scripts", icon: "📞", label: "Sales Scripts" },
+    { href: "/sales-marketing/email-templates", icon: "✉️", label: "Email Templates" },
+    { href: "/sales-marketing/social-media", icon: "📱", label: "Social Media" },
+    { href: "/sales-marketing/battle-cards", icon: "⚔️", label: "Battle Cards" },
+    { href: "/sales-marketing/objections", icon: "💬", label: "Objection Library" },
+    { href: "/sales-marketing/demo-guide", icon: "🖥️", label: "Demo Guide" },
+    { href: "/sales-marketing/downloads", icon: "📥", label: "Downloads" },
+    { href: "/sales-marketing/faq", icon: "❓", label: "FAQ" },
+  ]},
   { section: "REPORTING", items: [
     { href: "/reports", icon: "📈", label: "Analytics" },
   ]},
