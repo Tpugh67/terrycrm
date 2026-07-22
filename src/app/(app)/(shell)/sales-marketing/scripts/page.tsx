@@ -73,6 +73,50 @@ Happy to give them a no-pressure look, and if they sign up, there's a referral b
 
 Want me to get you set up right now so you can start exploring it today?`,
   },
+  {
+    id: "budget-objection-close",
+    category: "Closing",
+    title: "Closing After a Budget Objection",
+    situation: "Prospect said the price is a concern, but seems otherwise interested.",
+    body: `Totally understand — let's actually run the numbers together. How much time would you say gets lost each week to [specific pain point they mentioned, e.g. missed follow-ups]?
+
+[Listen]
+
+At $29/month, that works out to less than a dollar a day. If PipeDesk saves even one deal a quarter that would've otherwise fallen through the cracks, it's already paid for itself many times over. Want to start the trial today so you can see that for yourself, risk-free?`,
+  },
+  {
+    id: "inbound-demo-request",
+    category: "Inbound",
+    title: "Inbound Demo Request Follow-Up",
+    situation: "Prospect filled out a form requesting a demo.",
+    body: `Hi [Name], thanks for requesting a demo of PipeDesk! I saw you're with [company] — quick question before we schedule: what's prompting you to look at a new CRM right now?
+
+[Listen to their answer]
+
+Got it, that's really common actually. Let's find a time this week that works — does tomorrow at [time] or Thursday at [time] work better for you?`,
+  },
+  {
+    id: "warm-lead-callback",
+    category: "Inbound",
+    title: "Warm Lead Callback",
+    situation: "Following up on a lead who downloaded a resource or requested pricing.",
+    body: `Hi [Name], this is [Your Name] with PipeDesk — you recently checked out [resource/pricing page], so I wanted to follow up directly.
+
+Most people looking at that page are trying to solve [common pain point]. Is that what's going on for you too, or something different?
+
+[Listen]
+
+Happy to walk you through exactly how PipeDesk handles that — would a quick 15-minute call this week work?`,
+  },
+  {
+    id: "upsell-script",
+    category: "Upsell",
+    title: "Upgrading an Existing Customer",
+    situation: "Current customer on Solo/Team plan who's outgrowing it.",
+    body: `Hi [Name], noticed your team's been really active in PipeDesk lately — great to see! I wanted to reach out because at your current usage, the [next tier] plan would actually give you [specific benefit, e.g. more team seats / advanced reporting] that could help even more.
+
+Want me to walk you through what changes with the upgrade? No pressure either way — just wanted to make sure you're not missing out on something that'd genuinely help.`,
+  },
 ];
 
 const CATEGORIES = ["All", ...Array.from(new Set(SCRIPTS.map((s) => s.category)))];
