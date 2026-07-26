@@ -24,8 +24,30 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://pipedesk.app"),
   title: "PipeDesk — Multi-Industry CRM",
   description: "PipeDesk gives 18 industries a purpose-built CRM pipeline.",
+  openGraph: {
+    title: "PipeDesk — Multi-Industry CRM",
+    description: "PipeDesk gives 18 industries a purpose-built CRM pipeline.",
+    url: "https://pipedesk.app",
+    siteName: "PipeDesk",
+    images: [
+      {
+        url: "/brand/pipedesk-og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "PipeDesk — The multi-industry CRM built for how you sell",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PipeDesk — Multi-Industry CRM",
+    description: "PipeDesk gives 18 industries a purpose-built CRM pipeline.",
+    images: ["/brand/pipedesk-og-image.png"],
+  },
 };
 
 // Deliberately minimal — see docs/adr/0001-public-app-layout-split.md.
