@@ -21,6 +21,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/tasks": "Tasks", "/settings": "Settings", "/admin/reps": "Rep Applications",
   "/reports": "Admin Command Center",
   "/admin/affiliates": "Affiliate Applications",
+  "/executive-leadership": "Executive Recruiting",
 };
 
 const ADMIN_NAV = [
@@ -36,6 +37,9 @@ const ADMIN_NAV = [
     { href: "/admin/reps", icon: "🤝", label: "Sales Reps" },
     { href: "/admin/affiliates", icon: "📣", label: "Affiliates" },
     { href: "/partners", icon: "🏢", label: "Partners" },
+  ]},
+  { section: "EXECUTIVE", items: [
+    { href: "/executive-leadership", icon: "🎯", label: "Candidates" },
   ]},
   { section: "SALES & MARKETING CENTER", items: [
     { href: "/sales-marketing", icon: "🚀", label: "Overview" },
