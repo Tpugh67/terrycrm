@@ -23,6 +23,21 @@ const STAGES = [
   "Negotiation", "Accepted", "Active Executive",
 ];
 
+const STAGE_BAR_COLOR: Record<string, string> = {
+  "Prospect": "bg-slate-400",
+  "Contacted": "bg-blue-400",
+  "Discovery Call": "bg-blue-400",
+  "NDA": "bg-indigo-400",
+  "Executive Interview": "bg-violet-400",
+  "Founder Interview": "bg-violet-400",
+  "Due Diligence": "bg-amber-400",
+  "Reference Checks": "bg-amber-400",
+  "Offer": "bg-orange-400",
+  "Negotiation": "bg-orange-400",
+  "Accepted": "bg-emerald-400",
+  "Active Executive": "bg-emerald-600",
+};
+
 function stageColor(stage: string) {
   switch (stage) {
     case "Prospect": return "bg-slate-100 text-slate-700";
@@ -123,6 +138,26 @@ export default function ExecutiveLeadershipPage() {
         <Link href="/executive-leadership/pipeline" className="inline-flex items-center gap-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold px-4 py-2.5 rounded-xl transition">
           🔀 Kanban View
         </Link>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+        <h2 className="text-xl font-semibold text-slate-900 mb-4">Pipeline Funnel</h2>
+        <div className="space-y-2">
+          {STAGES.map((s) => {
+            const count = candidates.filter((c) => c.stage === s).length;
+            const max = Math.max(1, ...STAGES.map((st) => candidates.filter((c) => c.stage === st).length));
+            const pct = Math.round((count / max) * 100);
+            return (
+              <div key={s} className="flex items-center gap-3">
+                <span className="text-xs text-slate-500 w-40 flex-shrink-0 truncate">{s}</span>
+                <div className="flex-1 bg-slate-100 rounded-full h-5 overflow-hidden">
+                  <div className={"h-full rounded-full transition-all " + STAGE_BAR_COLOR[s]} style={{ width: pct + "%" }} />
+                </div>
+                <span className="text-xs font-semibold text-slate-700 w-6 text-right">{count}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
