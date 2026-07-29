@@ -330,7 +330,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push("/login");
   }
 
-  const pageTitle = PAGE_TITLES[pathname] || "Workspace";
+  const pageTitle = PAGE_TITLES[pathname]
+    || (pathname.startsWith("/executive-leadership") ? "Executive Recruiting" : "Workspace");
   const navSections = getNavByRole(userRole);
   const roleLabel = getRoleLabel(userRole);
   const roleBadgeColor = getRoleBadgeColor(userRole);
