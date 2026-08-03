@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../../lib/supabase";
+import { useRequireAdmin } from "../../../../lib/useRequireAdmin";
 
 type Candidate = {
   id?: number;
@@ -57,6 +58,7 @@ function stageColor(stage: string) {
 }
 
 export default function ExecutiveLeadershipPage() {
+  const { checking, allowed } = useRequireAdmin();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
@@ -127,6 +129,9 @@ export default function ExecutiveLeadershipPage() {
       [c.name, c.role_title, c.current_company, c.email].join(" ").toLowerCase().includes(query)
     );
   }, [candidates, search, stageFilter]);
+
+  if (checking) return <div className="text-center py-20 text-slate-400">Checking access...</div>;
+  if (!allowed) return null;
 
   return (
     <>

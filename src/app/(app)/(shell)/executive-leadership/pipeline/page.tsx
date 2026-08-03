@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../../../lib/supabase";
+import { useRequireAdmin } from "../../../../../lib/useRequireAdmin";
 
 type Candidate = {
   id?: number;
@@ -43,6 +44,7 @@ function initials(name: string) {
 }
 
 export default function ExecutivePipelinePage() {
+  const { checking, allowed } = useRequireAdmin();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -99,6 +101,9 @@ export default function ExecutivePipelinePage() {
   }, [candidates, search]);
 
   const stageCandidates = (s: string) => filteredCandidates.filter((c) => c.stage === s);
+
+  if (checking) return <div className="text-center py-20 text-slate-400">Checking access...</div>;
+  if (!allowed) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 -m-4 md:-m-6">
