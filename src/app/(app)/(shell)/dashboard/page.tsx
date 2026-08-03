@@ -4,11 +4,16 @@ import { supabase } from "../../../../lib/supabase";
 import Link from "next/link";
 
 type Deal = { id: number; title: string; stage: string; arv?: string; amount?: string; next_follow_up?: string; updated_at?: string; created_at?: string; };
+type DemoDeal = { id: number; title: string; stage: string; arv: string; created_offset_days: number; follow_up_offset_days: number | null; };
+type DemoTask = { id: number; title: string; due_offset_days: number; status: string; };
 
 function parseMoney(v?: string) { return Number((v || "").replace(/[^0-9.-]+/g, "")) || 0; }
 function fmtShort(n: number) { if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`; if (n >= 1_000) return `$${Math.round(n / 1_000)}K`; return `$${n}`; }
+function fmtFull(n: number) { return `$${Math.round(n).toLocaleString("en-US")}`; }
 function isOverdue(d?: string) { if (!d) return false; return new Date(d) < new Date(new Date().toDateString()); }
+function isToday(d?: string) { if (!d) return false; return new Date(d).toDateString() === new Date().toDateString(); }
 function fmtDate(d?: string) { if (!d) return ""; return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+function offsetFromToday(offsetDays: number) { const d = new Date(); d.setDate(d.getDate() + offsetDays); return d.toISOString(); }
 
 const INDUSTRIES = [
   { href: "/real-estate", code: "RE", label: "Real Estate", color: "bg-blue-600" },
@@ -35,26 +40,79 @@ export default function Dashboard() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const [demoTasksDueToday, setDemoTasksDueToday] = useState(0);
+  const [demoTotalDeals, setDemoTotalDeals] = useState(0);
+  const [toggling, setToggling] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-      setUserEmail(user.email || "");
+  const useDemo = demoModeEnabled && isAdmin;
+
+  async function load() {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    setUserEmail(user.email || "");
+
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    const admin = profile?.role === "admin";
+    setIsAdmin(admin);
+
+    let demoOn = false;
+    if (admin) {
+      const { data: settings } = await supabase.from("demo_mode_settings").select("enabled").eq("id", 1).single();
+      demoOn = settings?.enabled || false;
+    }
+    setDemoModeEnabled(demoOn);
+
+    if (admin && demoOn) {
+      const [{ data: demoDeals }, { data: demoTasks }] = await Promise.all([
+        supabase.from("demo_deals").select("*"),
+        supabase.from("demo_tasks").select("*").eq("status", "open"),
+      ]);
+      const mapped: Deal[] = (demoDeals || []).map((d: DemoDeal) => ({
+        id: d.id,
+        title: d.title,
+        stage: d.stage,
+        arv: d.arv,
+        next_follow_up: d.follow_up_offset_days !== null ? offsetFromToday(d.follow_up_offset_days) : undefined,
+        created_at: offsetFromToday(-d.created_offset_days),
+      }));
+      setDeals(mapped);
+      setDemoTotalDeals(mapped.length);
+      setDemoTasksDueToday((demoTasks || []).filter((t: DemoTask) => t.due_offset_days === 0).length);
+    } else {
       const { data } = await supabase.from("deals").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
       setDeals(data || []);
-      setLoading(false);
     }
-    load();
-  }, []);
+    setLoading(false);
+  }
 
-  const totalPipeline = deals.reduce((s, d) => s + parseMoney(d.arv), 0);
+  async function toggleDemoMode() {
+    setToggling(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("demo_mode_settings")
+      .update({ enabled: !demoModeEnabled, updated_by: user?.id, updated_at: new Date().toISOString() })
+      .eq("id", 1);
+    if (error) { alert(error.message); setToggling(false); return; }
+    await load();
+    setToggling(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  const totalPipeline = deals.reduce((s, d) => s + (d.stage?.toLowerCase().includes("closed") ? 0 : parseMoney(d.arv)), 0);
   const closedDeals = deals.filter(d => d.stage?.toLowerCase().includes("closed won") || d.stage?.toLowerCase().includes("completed") || d.stage?.toLowerCase().includes("placed") || d.stage?.toLowerCase().includes("invoiced"));
   const closedRevenue = closedDeals.reduce((s, d) => s + parseMoney(d.arv), 0);
   const overdueDeals = deals.filter(d => isOverdue(d.next_follow_up));
   const recentDeals = deals.slice(0, 5);
   const firstName = userEmail.split("@")[0].split(".")[0];
   const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+
+  const openOpportunities = useDemo ? demoTotalDeals - closedDeals.length : deals.length - closedDeals.length;
+  const tasksDueToday = useDemo ? demoTasksDueToday : deals.filter(d => isToday(d.next_follow_up)).length;
+  const totalDealsCount = useDemo ? demoTotalDeals : deals.length;
+  const conversionRate = totalDealsCount > 0 ? Math.round((closedDeals.length / totalDealsCount) * 100) : 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -63,6 +121,28 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      {useDemo && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-2.5 flex items-center justify-between">
+          <span className="text-sm font-semibold text-amber-800">✨ Demo Mode is active — this dashboard is showing sample data, not your real pipeline.</span>
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-semibold text-slate-800">Demo Mode</div>
+            <div className="text-xs text-slate-400">Shows realistic sample data for screenshots, videos, and demos instead of your real pipeline.</div>
+          </div>
+          <button
+            onClick={toggleDemoMode}
+            disabled={toggling}
+            className={"relative inline-flex h-6 w-11 items-center rounded-full transition disabled:opacity-50 " + (demoModeEnabled ? "bg-amber-500" : "bg-slate-300")}
+          >
+            <span className={"inline-block h-4 w-4 transform rounded-full bg-white transition " + (demoModeEnabled ? "translate-x-6" : "translate-x-1")} />
+          </button>
+        </div>
+      )}
+
       {/* Welcome */}
       <div className="flex items-center justify-between">
         <div>
@@ -77,10 +157,13 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Deals", value: String(deals.length), sub: "across all pipelines", icon: "🔀", color: "blue" },
-          { label: "Pipeline Value", value: fmtShort(totalPipeline), sub: "active deals", icon: "💰", color: "green" },
-          { label: "Closed Revenue", value: fmtShort(closedRevenue), sub: "won deals", icon: "✅", color: "emerald" },
+          { label: "Total Deals", value: String(totalDealsCount), sub: "across all pipelines", icon: "🔀", color: "blue" },
+          { label: "Pipeline Value", value: useDemo ? fmtFull(totalPipeline) : fmtShort(totalPipeline), sub: "active deals", icon: "💰", color: "green" },
+          { label: "Closed Revenue", value: useDemo ? fmtFull(closedRevenue) : fmtShort(closedRevenue), sub: "won deals", icon: "✅", color: "emerald" },
           { label: "Overdue", value: String(overdueDeals.length), sub: "need attention", icon: "⚠️", color: "red" },
+          { label: "Tasks Due Today", value: String(tasksDueToday), sub: "need action today", icon: "📌", color: "blue" },
+          { label: "Open Opportunities", value: String(openOpportunities), sub: "in active stages", icon: "📂", color: "blue" },
+          { label: "Conversion Rate", value: `${conversionRate}%`, sub: "closed vs. total", icon: "📈", color: "emerald" },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
@@ -137,7 +220,7 @@ export default function Dashboard() {
                   <div className="text-xs text-slate-400 mt-0.5">{fmtDate(d.created_at)}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-bold text-slate-700">{fmtShort(parseMoney(d.arv))}</div>
+                  <div className="text-xs font-bold text-slate-700">{useDemo ? fmtFull(parseMoney(d.arv)) : fmtShort(parseMoney(d.arv))}</div>
                   <div className="text-[10px] text-slate-400">{d.stage}</div>
                 </div>
               </div>
@@ -163,7 +246,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick tip */}
-      {deals.length === 0 && (
+      {deals.length === 0 && !useDemo && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-start gap-4">
           <span className="text-3xl">🚀</span>
           <div>
