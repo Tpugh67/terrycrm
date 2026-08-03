@@ -68,19 +68,31 @@ export default function ExecutiveLeadershipPage() {
   });
   const [editId, setEditId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 25;
 
   async function loadCandidates() {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("exec_candidates")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("created_at", { ascending: false });
+    if (stageFilter !== "all") query = query.eq("stage", stageFilter);
+    if (search.trim()) {
+      const q = search.trim();
+      query = query.or(`name.ilike.%${q}%,role_title.ilike.%${q}%,current_company.ilike.%${q}%`);
+    }
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data, error, count } = await query.range(from, to);
     if (error) { console.error("Load candidates error:", error); setLoading(false); return; }
     setCandidates(data || []);
+    setTotalCount(count || 0);
     setLoading(false);
   }
 
-  useEffect(() => { loadCandidates(); }, []);
+  useEffect(() => { loadCandidates(); }, [page, stageFilter, search]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
@@ -119,16 +131,6 @@ export default function ExecutiveLeadershipPage() {
     });
     setEditId(candidate.id || null);
   }
-
-  const filteredCandidates = useMemo(() => {
-    let list = candidates;
-    if (stageFilter !== "all") list = list.filter((c) => c.stage === stageFilter);
-    const query = search.trim().toLowerCase();
-    if (!query) return list;
-    return list.filter((c) =>
-      [c.name, c.role_title, c.current_company, c.email].join(" ").toLowerCase().includes(query)
-    );
-  }, [candidates, search, stageFilter]);
 
   if (checking) return <div className="text-center py-20 text-slate-400">Checking access...</div>;
   if (!allowed) return null;
@@ -193,19 +195,19 @@ export default function ExecutiveLeadershipPage() {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-          <h2 className="text-xl font-semibold text-slate-900">Candidate List <span className="text-slate-400 text-base font-normal">({filteredCandidates.length})</span></h2>
+          <h2 className="text-xl font-semibold text-slate-900">Candidate List <span className="text-slate-400 text-base font-normal">({totalCount})</span></h2>
           <div className="flex flex-col sm:flex-row gap-3">
-            <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value)} className="border border-slate-300 rounded-xl px-4 py-3">
+            <select value={stageFilter} onChange={(e) => { setStageFilter(e.target.value); setPage(0); }} className="border border-slate-300 rounded-xl px-4 py-3">
               <option value="all">All Stages</option>
               {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
-            <input type="text" placeholder="Search candidates..." value={search} onChange={(e) => setSearch(e.target.value)} className="border border-slate-300 rounded-xl px-4 py-3 md:w-72" />
+            <input type="text" placeholder="Search candidates..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="border border-slate-300 rounded-xl px-4 py-3 md:w-72" />
           </div>
         </div>
 
         {loading ? (
           <div className="text-center py-12 text-slate-400">Loading...</div>
-        ) : filteredCandidates.length === 0 ? (
+        ) : candidates.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
             <div className="text-4xl mb-3">🎯</div>
             <div className="font-semibold text-slate-600 mb-1">No candidates yet</div>
@@ -220,7 +222,7 @@ export default function ExecutiveLeadershipPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredCandidates.map((candidate) => (
+                {candidates.map((candidate) => (
                   <tr key={candidate.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="py-4 pr-4 font-medium text-slate-900">
                       <Link href={`/executive-leadership/candidates/${candidate.id}`} className="hover:underline">
@@ -241,6 +243,30 @@ export default function ExecutiveLeadershipPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {!loading && totalCount > PAGE_SIZE && (
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+            <span className="text-xs text-slate-500">
+              Showing {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition"
+              >
+                ← Prev
+              </button>
+              <button
+                onClick={() => setPage((p) => (p + 1) * PAGE_SIZE < totalCount ? p + 1 : p)}
+                disabled={(page + 1) * PAGE_SIZE >= totalCount}
+                className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition"
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
       </div>
