@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../../../../lib/supabase";
+import { useRequireAdmin } from "../../../../../../lib/useRequireAdmin";
 
 type Candidate = {
   id?: number;
@@ -43,6 +44,7 @@ function fmtTime(d?: string) {
 }
 
 export default function CandidateDetailPage() {
+  const { checking, allowed } = useRequireAdmin();
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
@@ -166,6 +168,9 @@ export default function CandidateDetailPage() {
 
   const openTasks = useMemo(() => tasks.filter((t) => t.status === "open"), [tasks]);
   const completedTasks = useMemo(() => tasks.filter((t) => t.status === "completed"), [tasks]);
+
+  if (checking) return <div className="text-center py-20 text-slate-400">Checking access...</div>;
+  if (!allowed) return null;
 
   if (loading) return <div className="text-center py-20 text-slate-400">Loading candidate...</div>;
   if (!candidate) return <div className="text-center py-20 text-slate-400">Candidate not found.</div>;
