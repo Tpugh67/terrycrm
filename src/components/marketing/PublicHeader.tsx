@@ -7,9 +7,8 @@ export type NavLink = { label: string; href: string };
 
 export default function PublicHeader({
   links = [
-    { label: "Industries", href: "#industries" },
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "FAQ", href: "/faq" },
   ],
 }: {
   links?: NavLink[];
