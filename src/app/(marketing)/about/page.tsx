@@ -12,7 +12,7 @@ export default function AboutPage() {
     <>
       <HeroSection
         title="Why we built PipeDesk this way"
-        description="Most CRMs make every business fit the same generic pipeline. We built PipeDesk around the opposite idea: your industry should shape your tools, not the other way around."
+        description="Most CRMs make every business fit the same generic pipeline. We built PipeDesk around the opposite idea: your business should shape your tools, not the other way around."
         background="dark"
       />
 
@@ -21,8 +21,8 @@ export default function AboutPage() {
         features={[
           {
             icon: Workflow,
-            headline: "Industry-specific from day one",
-            description: "18 industries, each with their own stages, terminology, and fields — not a generic pipeline with your industry's name on it.",
+            headline: "Flexible from day one",
+            description: "Pick a starting template built for your business, or customize stages and fields yourself — not a rigid, one-size-fits-all pipeline.",
           },
           {
             icon: Rocket,
@@ -39,7 +39,7 @@ export default function AboutPage() {
       />
 
       <CTASection
-        title="See it built for your industry"
+        title="See it built for your business"
         description="Start your free 14-day trial. No charge until it ends."
         primaryCta={{ label: "Start free trial", href: "/login?mode=signup" }}
         secondaryCta={{ label: "Get in touch", href: "/contact" }}

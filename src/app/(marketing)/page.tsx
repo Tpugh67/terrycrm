@@ -8,44 +8,24 @@ import {
   HeroVisual,
   DashboardPreview,
   FeatureGrid,
-  IndustryGrid,
   AISection,
   TrustSection,
   PricingSection,
   AffiliateSection,
   SDRRecruitmentSection,
   TestimonialsSection,
-  FAQSection,
   CTASection,
 } from "../../components/marketing";
-import type { Industry } from "../../components/marketing";
-import { INDUSTRY_PAGES, INDUSTRY_SLUGS } from "../../lib/industryPages";
-
-// Derived from the same config the industry pages themselves render from
-// (src/lib/industryPages.ts) — previously this array was hardcoded here
-// separately, which is exactly the kind of duplication Pass 5's industry
-// architecture work was meant to eliminate.
-const INDUSTRIES: Industry[] = INDUSTRY_SLUGS.map((slug) => {
-  const page = INDUSTRY_PAGES[slug as keyof typeof INDUSTRY_PAGES];
-  return {
-    icon: page.icon,
-    label: page.label,
-    href: `/${page.slug}`,
-    color: page.color,
-    description: page.eyebrow,
-  };
-});
 
 export default function HomePage() {
   return (
     <>
 
       <HeroSection
-        eyebrow="Built for real professionals · 18 industries"
-        title="The CRM built for your industry"
-        description="Stop configuring generic tools. PipeDesk gives you a pipeline built exactly for how your industry works — stages, terminology, and workflows included."
+        eyebrow="Trusted by growing sales teams"
+        title="The CRM built to help you close more deals"
+        description="Stop wrestling with generic tools. PipeDesk gives you one clean pipeline, automatic follow-up reminders, and an AI assistant built into every deal — everything you need to close more, without the busywork."
         primaryCta={{ label: "Start free trial", href: "/login?mode=signup" }}
-        secondaryCta={{ label: "Choose your industry", href: "#industries" }}
         visual={
           <HeroVisual
             variant="pipeline-cards"
@@ -74,17 +54,11 @@ export default function HomePage() {
         description="Not more features. The right ones, built for how you actually sell."
         columns={4}
         features={[
-          { icon: Workflow, headline: "Industry-specific pipelines", description: "Stages and fields built for your industry, not a generic sales funnel." },
+          { icon: Workflow, headline: "A pipeline built for how you sell", description: "Custom stages and fields that match your sales process — not a generic funnel forced onto your business." },
           { icon: Rocket, headline: "Simple onboarding", description: "Pick your industry, and your pipeline is ready — no configuration required." },
           { icon: DollarSign, headline: "Affordable pricing", description: "Plans start at $29/month, with every feature included, not paywalled." },
           { icon: Timer, headline: "Fast setup", description: "Import your contacts and start working deals the same day you sign up." },
         ]}
-      />
-
-      <IndustryGrid
-        title="Built for your industry, not a generic pipeline"
-        description="Pick your industry and PipeDesk sets up the right stages, terminology, and fields automatically."
-        industries={INDUSTRIES}
       />
 
       <AISection
@@ -170,17 +144,6 @@ export default function HomePage() {
           the page structure per the no-fabrication policy, so real quotes
           can be added later with zero layout change. */}
       <TestimonialsSection testimonials={[]} />
-
-      <FAQSection
-        title="Frequently asked questions"
-        faqs={[
-          { question: "What is PipeDesk?", answer: "PipeDesk is a multi-industry CRM platform built for businesses that manage leads, clients, and sales pipelines. It serves 18 industries including real estate, insurance, mortgage, solar, legal, and healthcare." },
-          { question: "How much does PipeDesk cost?", answer: "PipeDesk offers three plans: Solo at $29/month, Team at $79/month, and Business at $149/month. All plans include a free 14-day trial." },
-          { question: "Is there a free trial?", answer: "Yes — every plan includes a free 14-day trial." },
-          { question: "Do I need a credit card to start?", answer: "We collect your card at signup, but you won't be charged until your 14-day trial ends. Cancel anytime before then and you won't be billed." },
-          { question: "Can I cancel anytime?", answer: "Yes. You can cancel your subscription at any time from your account settings, with no cancellation fees." },
-        ]}
-      />
 
       <CTASection
         eyebrow="Ready when you are"

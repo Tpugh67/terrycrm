@@ -25,11 +25,11 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata = {
   metadataBase: new URL("https://pipedesk.app"),
-  title: "PipeDesk — Multi-Industry CRM",
-  description: "PipeDesk gives 18 industries a purpose-built CRM pipeline.",
+  title: "PipeDesk — The CRM Built to Close More Deals",
+  description: "PipeDesk gives any business a clean pipeline, automatic follow-up reminders, and an AI assistant built into every deal.",
   openGraph: {
-    title: "PipeDesk — Multi-Industry CRM",
-    description: "PipeDesk gives 18 industries a purpose-built CRM pipeline.",
+    title: "PipeDesk — The CRM Built to Close More Deals",
+    description: "PipeDesk gives any business a clean pipeline, automatic follow-up reminders, and an AI assistant built into every deal.",
     url: "https://pipedesk.app",
     siteName: "PipeDesk",
     images: [
@@ -37,15 +37,15 @@ export const metadata = {
         url: "/brand/pipedesk-og-image.png",
         width: 1200,
         height: 630,
-        alt: "PipeDesk — The multi-industry CRM built for how you sell",
+        alt: "PipeDesk — The CRM built to help you close more deals",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PipeDesk — Multi-Industry CRM",
-    description: "PipeDesk gives 18 industries a purpose-built CRM pipeline.",
+    title: "PipeDesk — The CRM Built to Close More Deals",
+    description: "PipeDesk gives any business a clean pipeline, automatic follow-up reminders, and an AI assistant built into every deal.",
     images: ["/brand/pipedesk-og-image.png"],
   },
 };

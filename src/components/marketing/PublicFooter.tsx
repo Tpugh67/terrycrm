@@ -13,6 +13,7 @@ export default function PublicFooter() {
             <Link href="/pricing" className="hover:text-(--color-foreground) transition-colors">Pricing</Link>
             <Link href="/partners" className="hover:text-(--color-foreground) transition-colors">Partners</Link>
             <Link href="/reps" className="hover:text-(--color-foreground) transition-colors">Become a rep</Link>
+            <Link href="/faq" className="hover:text-(--color-foreground) transition-colors">FAQ</Link>
             <Link href="/help" className="hover:text-(--color-foreground) transition-colors">Help Center</Link>
             <Link href="/contact" className="hover:text-(--color-foreground) transition-colors">Contact</Link>
           </nav>
@@ -22,6 +23,7 @@ export default function PublicFooter() {
           <nav className="flex items-center gap-5 text-xs text-(--color-foreground-subtle)">
             <Link href="/privacy" className="hover:text-(--color-foreground-muted) transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-(--color-foreground-muted) transition-colors">Terms of Service</Link>
+            <Link href="/refund-policy" className="hover:text-(--color-foreground-muted) transition-colors">Refund Policy</Link>
           </nav>
         </div>
       </Container>

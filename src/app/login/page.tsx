@@ -4,6 +4,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { REF_STORAGE_KEY } from "../../components/ReferralCapture";
 import Logo from "../../components/Logo";
+import Link from "next/link";
+
+const PLAN_PRICES: Record<string, { name: string; price: string }> = {
+  solo: { name: "Solo", price: "$29/mo" },
+  team: { name: "Team", price: "$79/mo" },
+  business: { name: "Business", price: "$149/mo" },
+};
 
 declare global {
   interface Window {
@@ -32,6 +39,8 @@ function LoginForm() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"login"|"signup"|"forgot"|"reset">("login");
+  const selectedPlanKey = searchParams.get("plan") || "solo";
+  const selectedPlan = PLAN_PRICES[selectedPlanKey] || PLAN_PRICES.solo;
 
   useEffect(() => {
     if (searchParams.get("mode") === "signup") setMode("signup");
@@ -207,7 +216,7 @@ function LoginForm() {
           {mode==="signup"&&(
             <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-5 text-center">
               <div className="text-sm font-bold text-blue-800">🎉 Start your free 14-day trial</div>
-              <div className="text-xs text-blue-600 mt-0.5">Not charged for 14 days · Cancel anytime</div>
+              <div className="text-xs text-blue-600 mt-0.5">{selectedPlan.name} plan · {selectedPlan.price} after trial · Cancel anytime</div>
             </div>
           )}
 
@@ -278,7 +287,17 @@ function LoginForm() {
           )}
 
           {mode==="login"&&<p className="text-center text-sm text-slate-400 mt-4">No account? <button onClick={()=>setMode("signup")} className="text-blue-600 font-semibold hover:underline">Sign up free</button></p>}
-          {mode==="signup"&&<p className="text-center text-sm text-slate-400 mt-4">Already have an account? <button onClick={()=>setMode("login")} className="text-blue-600 font-semibold hover:underline">Log in</button></p>}
+          {mode==="signup"&&(
+            <>
+              <p className="text-center text-sm text-slate-400 mt-4">Already have an account? <button onClick={()=>setMode("login")} className="text-blue-600 font-semibold hover:underline">Log in</button></p>
+              <p className="text-center text-xs text-slate-400 mt-4">
+                By creating an account you agree to our{" "}
+                <Link href="/terms" className="underline hover:text-slate-600">Terms</Link>
+                {" "}and{" "}
+                <Link href="/refund-policy" className="underline hover:text-slate-600">Refund Policy</Link>.
+              </p>
+            </>
+          )}
         </div>
         <p className="text-center text-xs text-slate-600 mt-6">
           <a href="/" className="hover:text-slate-400 transition">← Back to pipedesk.app</a>
