@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [demoTasksDueToday, setDemoTasksDueToday] = useState(0);
   const [demoTotalDeals, setDemoTotalDeals] = useState(0);
   const [toggling, setToggling] = useState(false);
+  const [contactsCount, setContactsCount] = useState(0);
 
   const useDemo = demoModeEnabled && isAdmin;
 
@@ -82,8 +83,12 @@ export default function Dashboard() {
       setDemoTotalDeals(mapped.length);
       setDemoTasksDueToday((demoTasks || []).filter((t: DemoTask) => t.due_offset_days === 0).length);
     } else {
-      const { data } = await supabase.from("deals").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      const [{ data }, { count: cCount }] = await Promise.all([
+        supabase.from("deals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("contacts").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+      ]);
       setDeals(data || []);
+      setContactsCount(cCount || 0);
     }
     setLoading(false);
   }
@@ -245,17 +250,48 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Quick tip */}
-      {deals.length === 0 && !useDemo && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-start gap-4">
-          <span className="text-3xl">🚀</span>
-          <div>
-            <div className="font-bold text-blue-900">Welcome to PipeDesk!</div>
-            <div className="text-sm text-blue-700 mt-1">Get started by clicking any industry pipeline above and adding your first deal. It takes less than 30 seconds.</div>
-            <Link href="/real-estate" className="inline-block mt-3 bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition">Add your first deal →</Link>
+      {/* Onboarding checklist — shown to real (non-demo) accounts until complete */}
+      {(() => {
+        const step1 = contactsCount > 0;
+        const step2 = deals.length > 0;
+        const step3 = deals.some((d) => !!d.next_follow_up);
+        const step4 = closedDeals.length > 0;
+        const allDone = step1 && step2 && step3 && step4;
+        if (useDemo || allDone) return null;
+        const steps = [
+          { done: step1, label: "Import your contacts", desc: "Bring in your existing leads and clients.", href: "/contacts", cta: "Import contacts" },
+          { done: step2, label: "Add your first deal", desc: "Start tracking an opportunity in your pipeline.", href: "/real-estate", cta: "Add a deal" },
+          { done: step3, label: "Schedule your first follow-up", desc: "Set a next-step date so nothing falls through the cracks.", href: "/pipeline", cta: "Set a follow-up" },
+          { done: step4, label: "Close your first deal", desc: "Mark a deal won and see it reflected in your revenue.", href: "/pipeline", cta: "View pipeline" },
+        ];
+        return (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-2xl">🚀</span>
+              <div className="font-bold text-slate-900 text-lg">Get started with PipeDesk</div>
+            </div>
+            <p className="text-sm text-slate-500 mb-5">Complete these steps to set up your workspace.</p>
+            <div className="space-y-3">
+              {steps.map((s) => (
+                <div key={s.label} className={"flex items-center justify-between rounded-xl border px-4 py-3 " + (s.done ? "border-emerald-200 bg-emerald-50" : "border-slate-200")}>
+                  <div className="flex items-center gap-3">
+                    <span className={"w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 " + (s.done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500")}>
+                      {s.done ? "✓" : ""}
+                    </span>
+                    <div>
+                      <div className={"text-sm font-semibold " + (s.done ? "text-emerald-800 line-through" : "text-slate-800")}>{s.label}</div>
+                      <div className="text-xs text-slate-400">{s.desc}</div>
+                    </div>
+                  </div>
+                  {!s.done && (
+                    <Link href={s.href} className="text-xs font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap ml-3">{s.cta} →</Link>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
