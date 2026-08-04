@@ -12,7 +12,7 @@ const FAQS: FAQCategory[] = [
   {
     category: "General",
     items: [
-      { question: "What is PipeDesk?", answer: "PipeDesk is a multi-industry CRM platform built for businesses that manage leads, clients, and sales pipelines. It serves 18 industries including real estate, insurance, mortgage, solar, legal, healthcare, and more." },
+      { question: "What is PipeDesk?", answer: "PipeDesk is a CRM built for businesses that manage leads, clients, and sales pipelines. Start from a template built for your business, or customize your own stages and fields." },
       { question: "How much does PipeDesk cost?", answer: "PipeDesk offers three plans: Solo at $29/month, Team at $79/month, and Business at $149/month. All plans include a free 14-day trial." },
       { question: "Is there a free trial?", answer: "Yes — every plan includes a free 14-day trial. We ask for a card at signup, but you will not be charged until the trial ends." },
       { question: "Do I need a credit card?", answer: "We collect your card when you sign up, but you will not be charged until your 14-day trial ends. Cancel anytime before then and you will not be billed." },
@@ -68,7 +68,7 @@ const FAQS: FAQCategory[] = [
 
 const QUICK_STEPS = [
   { title: "Create your account", description: "Sign up at pipedesk.app/login with your email and password." },
-  { title: "Select your industry", description: "Choose from 18 industries. PipeDesk will set up your pipeline with the right stages." },
+  { title: "Set up your pipeline", description: "Pick a starting template that fits your business, or customize your own stages and fields." },
   { title: "Import your contacts", description: "Upload a CSV file or add contacts manually on the Contacts page." },
   { title: "Add your first deal", description: "Go to Pipeline and click + Add Deal. Fill in the details and save." },
   { title: "Set follow-up reminders", description: "Add a follow-up date to each deal so nothing falls through the cracks." },
@@ -99,7 +99,7 @@ export default function HelpPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: `You are a helpful support assistant for PipeDesk, a multi-industry CRM platform. PipeDesk serves 18 industries, costs $29-149/month, has a free 14-day trial, and includes features like contact management, deal pipeline, task tracking, CSV import/export, and an AI assistant inside each deal card. Answer this user question clearly and concisely in 2-4 sentences: "${q}"`,
+          prompt: `You are a helpful support assistant for PipeDesk, a CRM platform built for any business that manages leads, clients, and sales pipelines. PipeDesk costs $29-149/month, has a free 14-day trial, and includes features like contact management, deal pipeline, task tracking, CSV import/export, and an AI assistant inside each deal card. Answer this user question clearly and concisely in 2-4 sentences: "${q}"`,
         }),
       });
       const data = await res.json();
