@@ -22,7 +22,7 @@ const PLANS: PricingPlan[] = [
     scale: "1 user",
     features: [
       "1 user",
-      "All 18 industry pipelines",
+      "Flexible, customizable pipelines",
       "Unlimited deals",
       "CSV import/export",
       "Follow-up reminders",
@@ -104,9 +104,9 @@ export default function PricingPage() {
         title="Frequently asked questions"
         faqs={[
           { question: "Can I change plans later?", answer: "Yes! You can upgrade or downgrade your plan at any time from your account settings." },
-          { question: "What happens after the free trial?", answer: "After 14 days you'll be prompted to enter payment details. No charge until then." },
-          { question: "Do you offer refunds?", answer: "Yes — if you're not satisfied within 30 days of your first payment we'll refund you in full." },
-          { question: "Which industries are supported?", answer: "All 18 industries — Real Estate, Insurance, Solar, Trucking, Recruiting, Healthcare, Legal, and 11 more." },
+          { question: "What happens after the free trial?", answer: "We collect your card when you sign up, but you will not be charged until your 14-day trial ends. Cancel anytime before then and you will not be billed." },
+          { question: "Do you offer refunds?", answer: "There are no refunds once you've been charged, but you can cancel free anytime during your 14-day trial. See our Refund Policy for full details." },
+          { question: "Is PipeDesk right for my business?", answer: "Yes. PipeDesk isn't locked to a fixed set of industries — start from a template built for your business, or customize your own stages and fields." },
           { question: "Can I import my existing data?", answer: "Yes! PipeDesk supports CSV import on all plans so you can bring your existing deals and contacts." },
           { question: "Is there a setup fee?", answer: "No setup fees ever. Solo and Team plans you set up yourself. Business and Corporate include onboarding." },
         ]}
