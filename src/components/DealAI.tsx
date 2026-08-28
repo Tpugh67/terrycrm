@@ -70,7 +70,7 @@ export default function DealAI({ deal, notes }: { deal: Deal; notes: string }) {
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
-        body: JSON.stringify({ prompt: action.prompt(deal, notes) }),
+        body: JSON.stringify({ prompt: action.prompt(deal, notes), feature: "deal_assistant", action_id: action.id }),
       });
       const data = await res.json();
       setResult(data.result || data.error || "Something went wrong.");
