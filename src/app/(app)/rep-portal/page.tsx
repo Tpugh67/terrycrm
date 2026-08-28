@@ -114,7 +114,7 @@ export default function RepPortalPage() {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
         body: JSON.stringify({
-          prompt: `You are a sales assistant for PipeDesk, a multi-industry CRM at $29-149/month with 18 industry pipelines. Help this sales rep with their request. Be specific, professional, and ready to use. Request: ${prompt}`
+          prompt: `You are a sales assistant for PipeDesk, a CRM built for any business at $29-149/month, with flexible pipelines that adapt to how each customer sells. Help this sales rep with their request. Be specific, professional, and ready to use. Request: ${prompt}`
         }),
       });
       const data = await res.json();
