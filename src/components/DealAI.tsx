@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { getAuthHeaders } from "../lib/authHeader";
+import AIUsageIndicator from "./AIUsageIndicator";
 
 type Deal = {
   title: string;
@@ -59,6 +60,7 @@ export default function DealAI({ deal, notes }: { deal: Deal; notes: string }) {
   const [result, setResult] = useState("");
   const [activeAction, setActiveAction] = useState("");
   const [copied, setCopied] = useState(false);
+  const [usageExhausted, setUsageExhausted] = useState(false);
 
   async function runAction(action: Action) {
     setActiveAction(action.id);
@@ -74,6 +76,7 @@ export default function DealAI({ deal, notes }: { deal: Deal; notes: string }) {
       });
       const data = await res.json();
       setResult(data.result || data.error || "Something went wrong.");
+      if (data.usageLimitReached) setUsageExhausted(true);
     } catch {
       setResult("Failed to connect to AI. Please try again.");
     }
@@ -125,6 +128,8 @@ export default function DealAI({ deal, notes }: { deal: Deal; notes: string }) {
           </button>
         ))}
       </div>
+
+      {!usageExhausted && <AIUsageIndicator />}
 
       {/* Result */}
       {(loading || result) && (
