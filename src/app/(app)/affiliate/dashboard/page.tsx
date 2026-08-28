@@ -106,7 +106,8 @@ export default function AffiliateDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
         body: JSON.stringify({
-          prompt: `You are a marketing assistant for PipeDesk, a CRM built for any business at $29-149/month, with flexible pipelines that adapt to how each customer sells. An affiliate partner is asking you to help them create marketing content. Follow PipeDesk brand guidelines: professional, helpful, growth-focused. Request: ${aiPrompt}`
+          prompt: `You are a marketing assistant for PipeDesk, a CRM built for any business at $29-149/month, with flexible pipelines that adapt to how each customer sells. An affiliate partner is asking you to help them create marketing content. Follow PipeDesk brand guidelines: professional, helpful, growth-focused. Request: ${aiPrompt}`,
+          feature: "affiliate",
         }),
       });
       const data = await res.json();

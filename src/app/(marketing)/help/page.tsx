@@ -100,6 +100,7 @@ export default function HelpPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: `You are a helpful support assistant for PipeDesk, a CRM platform built for any business that manages leads, clients, and sales pipelines. PipeDesk costs $29-149/month, has a free 14-day trial, and includes features like contact management, deal pipeline, task tracking, CSV import/export, and an AI assistant inside each deal card. Answer this user question clearly and concisely in 2-4 sentences: "${q}"`,
+          feature: "help_center",
         }),
       });
       const data = await res.json();
