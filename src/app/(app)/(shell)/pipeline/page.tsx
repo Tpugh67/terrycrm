@@ -165,10 +165,21 @@ export default function PipelinePage() {
         dt.setDate(dt.getDate() + offset);
         return dt.toISOString();
       };
+      // demo_deals uses its own stage vocabulary (shared with Dashboard's
+      // simpler "is it closed or not" logic), which doesn't match this
+      // page's actual 4-column Kanban stages. Translate rather than
+      // show every demo deal piling into one unmatched bucket.
+      const STAGE_MAP: Record<string, string> = {
+        "Lead Qualified": "New Leads",
+        "Demo Scheduled": "Contacted",
+        "Proposal Sent": "Offer Made",
+        "Negotiation": "Offer Made",
+        "Closed Won": "Closed",
+      };
       const mapped: Deal[] = (demoDeals || []).map((dd: { id: number; title: string; stage: string; arv: string; created_offset_days: number; follow_up_offset_days: number | null }) => ({
         id: dd.id,
         title: dd.title,
-        stage: dd.stage,
+        stage: STAGE_MAP[dd.stage] || "New Leads",
         arv: dd.arv,
         seller: "Demo Contact",
         created_at: offsetDate(dd.created_offset_days),
