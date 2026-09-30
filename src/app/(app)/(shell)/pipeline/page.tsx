@@ -126,6 +126,9 @@ export default function PipelinePage() {
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const useDemo = demoModeEnabled && isAdmin;
 
   async function getCurrentUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -137,6 +140,47 @@ export default function PipelinePage() {
     setLoading(true);
     const user = await getCurrentUser();
     if (!user) { setLoading(false); return; }
+
+    // Demo Mode: same pattern as the Dashboard page -- admin-only, and
+    // deliberately swaps out real deal data entirely rather than
+    // filtering it, so no real customer/deal names can ever appear on
+    // screen while demoing or recording, regardless of what real data
+    // exists in this account.
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    const admin = profile?.role === "admin";
+    setIsAdmin(admin);
+
+    let demoOn = false;
+    if (admin) {
+      const { data: settings } = await supabase.from("demo_mode_settings").select("enabled").eq("id", 1).single();
+      demoOn = settings?.enabled || false;
+    }
+    setDemoModeEnabled(demoOn);
+
+    if (admin && demoOn) {
+      const { data: demoDeals } = await supabase.from("demo_deals").select("*");
+      const today = new Date();
+      const offsetDate = (offset: number) => {
+        const dt = new Date(today);
+        dt.setDate(dt.getDate() + offset);
+        return dt.toISOString();
+      };
+      const mapped: Deal[] = (demoDeals || []).map((dd: { id: number; title: string; stage: string; arv: string; created_offset_days: number; follow_up_offset_days: number | null }) => ({
+        id: dd.id,
+        title: dd.title,
+        stage: dd.stage,
+        arv: dd.arv,
+        seller: "Demo Contact",
+        created_at: offsetDate(dd.created_offset_days),
+        next_follow_up: dd.follow_up_offset_days != null ? offsetDate(dd.follow_up_offset_days) : undefined,
+      }));
+      setDeals(mapped);
+      setContacts([]);
+      setNotes([]);
+      setLoading(false);
+      return;
+    }
+
     const [
       { data: d }, { data: c }, { data: n }
     ] = await Promise.all([
@@ -349,6 +393,11 @@ export default function PipelinePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {useDemo && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-center">
+          <span className="text-sm font-semibold text-amber-800">✨ Demo Mode is active — this pipeline is showing sample data, not your real deals.</span>
+        </div>
+      )}
 
       {/* Top bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-30">
