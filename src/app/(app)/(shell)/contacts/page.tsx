@@ -22,6 +22,21 @@ export default function ContactsPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const useDemo = demoModeEnabled && isAdmin;
+
+  // Small, hardcoded sample contacts -- there's no demo_contacts table,
+  // and none is needed for a handful of realistic-looking placeholder
+  // rows. Same purpose as Dashboard/Pipeline's Demo Mode: guarantee no
+  // real contact ever appears on screen while demoing or recording,
+  // regardless of what real data exists in this account.
+  const DEMO_CONTACTS: Contact[] = [
+    { id: -1, name: "Alex Morgan", email: "alex.morgan@example.com", phone: "555-0101", company: "Morgan Consulting" },
+    { id: -2, name: "Priya Sharma", email: "priya@brightpath.co", phone: "555-0102", company: "BrightPath Advisors" },
+    { id: -3, name: "Daniel Reyes", email: "daniel.reyes@example.com", phone: "555-0103", company: "Reyes & Co." },
+    { id: -4, name: "Sarah Chen", email: "s.chen@northline.com", phone: "555-0104", company: "Northline Partners" },
+  ];
 
   async function getCurrentUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -32,6 +47,23 @@ export default function ContactsPage() {
   async function loadContacts() {
     const user = await getCurrentUser();
     if (!user) return;
+
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    const admin = profile?.role === "admin";
+    setIsAdmin(admin);
+
+    let demoOn = false;
+    if (admin) {
+      const { data: settings } = await supabase.from("demo_mode_settings").select("enabled").eq("id", 1).single();
+      demoOn = settings?.enabled || false;
+    }
+    setDemoModeEnabled(demoOn);
+
+    if (admin && demoOn) {
+      setContacts(DEMO_CONTACTS);
+      return;
+    }
+
     const { data, error } = await supabase.from("contacts").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
     if (error) { console.error("Load contacts error:", error); return; }
     setContacts(data || []);
@@ -147,6 +179,11 @@ export default function ContactsPage() {
 
   return (
     <>
+      {useDemo && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 mb-4 text-center">
+          <span className="text-sm font-semibold text-amber-800">✨ Demo Mode is active — these are sample contacts, not your real list.</span>
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-4xl font-bold tracking-tight text-slate-900">Contacts</h1>
         <p className="text-slate-500 mt-2 text-base">Manage sellers, buyers, and business contacts.</p>
