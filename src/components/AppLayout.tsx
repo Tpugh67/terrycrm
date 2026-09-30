@@ -293,6 +293,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [userInitials, setUserInitials] = useState("?");
   const [userIndustry, setUserIndustry] = useState("");
   const [userRole, setUserRole] = useState("user");
+  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [industriesOpen, setIndustriesOpen] = useState(false);
@@ -320,10 +321,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const { data: profile } = await supabase.from("profiles").select("industry, role").eq("id", user.id).single();
         if (profile?.industry) setUserIndustry(profile.industry);
         if (profile?.role) setUserRole(profile.role);
+
+        // Same protection already applied to Dashboard, Pipeline, and
+        // Contacts: while Demo Mode is active for an admin, never show
+        // the real, personally-identifying account email anywhere on
+        // screen -- including the nav chrome that's visible on every
+        // single page, not just the ones with their own Demo Mode logic.
+        if (profile?.role === "admin") {
+          const { data: settings } = await supabase.from("demo_mode_settings").select("enabled").eq("id", 1).single();
+          setDemoModeEnabled(settings?.enabled || false);
+        }
       }
     }
     loadUser();
   }, []);
+
+  const displayEmail = demoModeEnabled && userRole === "admin" ? "demo@pipedesk.app" : userEmail;
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -347,7 +360,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setIndustriesOpen,
     userIndustry,
     userInitials,
-    userEmail,
+    userEmail: displayEmail,
     onNavigate: () => setMobileOpen(false),
     onLogout: handleLogout,
     onCloseMobile: () => setMobileOpen(false),
@@ -393,7 +406,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {mobileSearchOpen ? <XIcon size={18} /> : <SearchIcon size={18} />}
               </button>
               <div className={"text-xs font-bold px-2 py-1 rounded-full " + (userRole === "admin" ? "bg-amber-100 text-amber-700" : userRole === "rep" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600")}>{roleLabel}</div>
-              <div className="text-xs text-slate-400 hidden md:block">{userEmail}</div>
+              <div className="text-xs text-slate-400 hidden md:block">{displayEmail}</div>
               <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{userInitials}</div>
             </div>
           </div>
