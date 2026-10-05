@@ -129,6 +129,12 @@ export default function PipelinePage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [demoModeEnabled, setDemoModeEnabled] = useState(false);
   const useDemo = demoModeEnabled && isAdmin;
+  // Demo deals use ids 1-24 and the real tables are keyed by id, so a write
+  // made while Demo Mode is on could change a real deal or note that happens
+  // to share an id. Block every write path while demoing.
+  const demoBlocked = () => {
+    alert("Demo Mode is on, so changes are turned off to protect your real data. Turn Demo Mode off on the Dashboard to make edits.");
+  };
 
   async function getCurrentUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -176,12 +182,15 @@ export default function PipelinePage() {
         "Negotiation": "Offer Made",
         "Closed Won": "Closed",
       };
-      const mapped: Deal[] = (demoDeals || []).map((dd: { id: number; title: string; stage: string; arv: string; created_offset_days: number; follow_up_offset_days: number | null }) => ({
+      // Realistic placeholder sellers. A generic "Demo Contact" made the AI
+      // Assistant open its emails with "Hi Demo," on camera.
+      const DEMO_SELLERS = ["Dan Johnson", "Maria Alvarez", "Kevin Brooks", "Priya Patel", "Tom Reilly", "Lena Fischer"];
+      const mapped: Deal[] = (demoDeals || []).map((dd: { id: number; title: string; stage: string; arv: string; created_offset_days: number; follow_up_offset_days: number | null }, i: number) => ({
         id: dd.id,
         title: dd.title,
         stage: STAGE_MAP[dd.stage] || "New Leads",
         arv: dd.arv,
-        seller: "Demo Contact",
+        seller: DEMO_SELLERS[i % DEMO_SELLERS.length],
         created_at: offsetDate(dd.created_offset_days),
         next_follow_up: dd.follow_up_offset_days != null ? offsetDate(dd.follow_up_offset_days) : undefined,
       }));
@@ -248,6 +257,7 @@ export default function PipelinePage() {
   }
 
   async function handleSubmit(e: React.FormEvent) {
+    if (useDemo) { e.preventDefault(); demoBlocked(); return; }
     e.preventDefault();
     if (!form.title || !form.seller) return;
     setSaving(true);
@@ -279,6 +289,7 @@ export default function PipelinePage() {
   }
 
   async function handleDelete(id?: number) {
+    if (useDemo) { demoBlocked(); return; }
     if (!id || !confirm("Delete this deal? This cannot be undone.")) return;
     const user = await getCurrentUser();
     if (!user) return;
@@ -287,6 +298,7 @@ export default function PipelinePage() {
   }
 
   async function handleStageChange(id: number | undefined, newStage: string) {
+    if (useDemo) { demoBlocked(); return; }
     if (!id) return;
     const user = await getCurrentUser();
     if (!user) return;
@@ -314,6 +326,7 @@ export default function PipelinePage() {
   }
 
   async function addNote(dealId: number, contentOverride?: string) {
+    if (useDemo) { demoBlocked(); return; }
     const content = (contentOverride ?? noteInputs[dealId] ?? "").trim();
     if (!content) return;
     const user = await getCurrentUser();
@@ -326,6 +339,7 @@ export default function PipelinePage() {
   }
 
   async function quickAction(dealId: number, action: "call" | "text" | "offer") {
+    if (useDemo) { demoBlocked(); return; }
     await addNote(dealId, { call: "📞 Called seller", text: "💬 Sent text to seller", offer: "💰 Made offer" }[action]);
   }
 
@@ -367,6 +381,7 @@ export default function PipelinePage() {
   const [importMsg, setImportMsg] = useState("");
 
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    if (useDemo) { demoBlocked(); return; }
     const file = e.target.files?.[0];
     if (!file) return;
     setImporting(true); setImportMsg("");
