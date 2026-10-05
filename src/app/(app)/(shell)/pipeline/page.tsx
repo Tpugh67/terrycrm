@@ -298,7 +298,13 @@ export default function PipelinePage() {
   }
 
   async function handleStageChange(id: number | undefined, newStage: string) {
-    if (useDemo) { demoBlocked(); return; }
+    if (useDemo) {
+      // On-screen only: nothing is saved, and it resets on refresh.
+      if (!id) return;
+      setDeals((ds) => ds.map((d) => d.id === id ? { ...d, stage: newStage } : d));
+      setNotes((p) => [{ id: Date.now(), deal_id: id, user_id: "demo", content: `📋 Moved to ${newStage}`, created_at: new Date().toISOString() }, ...p]);
+      return;
+    }
     if (!id) return;
     const user = await getCurrentUser();
     if (!user) return;
@@ -326,9 +332,14 @@ export default function PipelinePage() {
   }
 
   async function addNote(dealId: number, contentOverride?: string) {
-    if (useDemo) { demoBlocked(); return; }
     const content = (contentOverride ?? noteInputs[dealId] ?? "").trim();
     if (!content) return;
+    if (useDemo) {
+      // On-screen only: nothing is saved, and it resets on refresh.
+      setNoteInputs((p) => ({ ...p, [dealId]: "" }));
+      setNotes((p) => [{ id: Date.now(), deal_id: dealId, user_id: "demo", content, created_at: new Date().toISOString() }, ...p]);
+      return;
+    }
     const user = await getCurrentUser();
     if (!user) return;
     setNoteInputs((p) => ({ ...p, [dealId]: "" }));
@@ -339,7 +350,6 @@ export default function PipelinePage() {
   }
 
   async function quickAction(dealId: number, action: "call" | "text" | "offer") {
-    if (useDemo) { demoBlocked(); return; }
     await addNote(dealId, { call: "📞 Called seller", text: "💬 Sent text to seller", offer: "💰 Made offer" }[action]);
   }
 
