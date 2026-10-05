@@ -35,7 +35,7 @@ export default function HeroSection({
                 </div>
               )}
               <h1 className="pd-text-display">{title}</h1>
-              {description && <p className="pd-text-body-lg mt-6 max-w-xl opacity-90">{description}</p>}
+              {description && <p className="pd-text-body-lg mt-6 max-w-xl" style={{ color: background === "surface" ? undefined : "rgba(255,255,255,0.85)" }}>{description}</p>}
               {(primaryCta || secondaryCta) && (
                 <div className="flex flex-wrap items-center gap-4 mt-10">
                   {primaryCta && (
