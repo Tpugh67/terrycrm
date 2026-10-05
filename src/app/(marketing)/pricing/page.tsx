@@ -13,11 +13,13 @@ import type { PricingPlan } from "../../../components/marketing";
 // full trace. Billing-period selection stays purely a display feature
 // here (see PricingSection's billingToggle) since /api/checkout has no
 // annual-vs-monthly price distinction to route to yet regardless.
+// The annual toggle is hidden until annual billing exists, so this page never
+// shows a price (such as $24/mo) that checkout will not actually charge.
 const PLANS: PricingPlan[] = [
   {
     name: "Solo",
     description: "Perfect for independent professionals",
-    price: { monthly: 29, annual: 24 },
+    price: "$29",
     period: "/mo",
     scale: "1 user",
     features: [
@@ -34,7 +36,7 @@ const PLANS: PricingPlan[] = [
   {
     name: "Team",
     description: "For growing teams and small agencies",
-    price: { monthly: 79, annual: 66 },
+    price: "$79",
     period: "/mo",
     scale: "Up to 5 users",
     highlighted: true,
@@ -52,7 +54,7 @@ const PLANS: PricingPlan[] = [
   {
     name: "Business",
     description: "For established businesses",
-    price: { monthly: 149, annual: 124 },
+    price: "$149",
     period: "/mo",
     scale: "Up to 15 users",
     features: [
@@ -93,12 +95,7 @@ export default function PricingPage() {
         background="surface"
       />
 
-      <PricingSection
-        plans={PLANS}
-        billingToggle
-        annualSavingsLabel="Save 2 months"
-        columns={4}
-      />
+      <PricingSection plans={PLANS} columns={4} />
 
       <FAQSection
         title="Frequently asked questions"
