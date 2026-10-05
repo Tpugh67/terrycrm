@@ -22,7 +22,6 @@ export default function HomePage() {
     <>
 
       <HeroSection
-        eyebrow="Trusted by growing sales teams"
         title="The CRM built to help you close more deals"
         description="Stop wrestling with generic tools. PipeDesk gives you one clean pipeline, automatic follow-up reminders, and an AI assistant built into every deal — everything you need to close more, without the busywork."
         primaryCta={{ label: "Start free trial", href: "/login?mode=signup" }}
@@ -68,8 +67,8 @@ export default function HomePage() {
           { icon: MailPlus, label: "Draft a follow-up email", description: "Written from the deal's actual stage and history." },
           { icon: Target, label: "Suggest the next action", description: "One clear, specific next step — not a generic checklist." },
           { icon: ClipboardList, label: "Summarize a deal in seconds", description: "Status, key numbers, and risks in four bullet points." },
-          { icon: GrowthIcon, label: "Estimate close probability", description: "An honest read on the deal's odds, with reasoning." },
-          { icon: MessageSquareText, label: "Prep for objections", description: "The most likely pushback, and how to answer it." },
+          { icon: GrowthIcon, label: "Assess deal health", description: "A Strong, Moderate or Weak read on the deal, with the reasons." },
+          { icon: MessageSquareText, label: "Handle objections", description: "The most likely pushback, and how to answer it." },
         ]}
       />
 
@@ -88,14 +87,15 @@ export default function HomePage() {
 
       <PricingSection
         title="Simple pricing, all plans included"
-        description="Every plan includes a 14-day free trial. Cancel anytime."
+        description="Solo, Team and Business include a 14-day free trial. Cancel anytime."
+          columns={4}
         plans={[
           {
             name: "Solo",
             price: "$29",
             period: "/month",
             description: "For one person running their own pipeline.",
-            features: ["1 user", "Unlimited deals", "CSV import/export"],
+            features: ["1 user", "Unlimited deals", "CSV import/export", "AI deal assistant"],
             cta: { label: "Start free trial", href: "/login?mode=signup&plan=solo" },
           },
           {
@@ -103,7 +103,7 @@ export default function HomePage() {
             price: "$79",
             period: "/month",
             description: "For small teams working deals together.",
-            features: ["5 users", "Unlimited deals", "AI deal assistant"],
+            features: ["Up to 5 users", "Unlimited deals", "AI deal assistant"],
             cta: { label: "Start free trial", href: "/login?mode=signup&plan=team" },
             highlighted: true,
           },
@@ -112,9 +112,16 @@ export default function HomePage() {
             price: "$149",
             period: "/month",
             description: "For growing teams that need visibility.",
-            features: ["Unlimited users", "Priority support", "Admin analytics"],
+            features: ["Up to 15 users", "Priority support", "Admin analytics", "AI deal assistant"],
             cta: { label: "Start free trial", href: "/login?mode=signup&plan=business" },
           },
+            {
+              name: "Corporate",
+              price: "Custom",
+              description: "For large organizations.",
+              features: ["15+ users", "Dedicated support rep", "Custom contract"],
+              cta: { label: "Contact us", href: "mailto:hello@pipedesk.app?subject=Corporate Plan Inquiry" },
+            },
         ]}
       />
 
