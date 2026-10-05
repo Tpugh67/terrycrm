@@ -22,9 +22,9 @@ export default function AISection({
       <Container width="content">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <p className="pd-text-caption uppercase tracking-wider mb-3 opacity-80">{eyebrow}</p>
+            <p className="pd-text-caption uppercase tracking-wider mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>{eyebrow}</p>
             <h2 className="pd-text-h1 mb-4">{title}</h2>
-            {description && <p className="pd-text-body-lg opacity-90 mb-8">{description}</p>}
+            {description && <p className="pd-text-body-lg mb-8" style={{ color: "rgba(255,255,255,0.85)" }}>{description}</p>}
             <StaggerGroup className="space-y-3" staggerMs={60}>
               {capabilities.map((cap) => (
                 <Card key={cap.label} variant="bordered" className="bg-white/5 border-white/15 flex items-start gap-3">
