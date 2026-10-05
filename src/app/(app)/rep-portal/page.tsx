@@ -57,6 +57,7 @@ export default function RepPortalPage() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard"|"activity"|"ai"|"training">("dashboard");
+  const [repApplicationStatus, setRepApplicationStatus] = useState<string | null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiResult, setAiResult] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -69,8 +70,9 @@ export default function RepPortalPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: repData } = await supabase.from("reps").select("*").eq("email", user.email).single();
-      if (repData) {
+      const { data: repData } = await supabase.from("reps").select("*").eq("email", user.email).maybeSingle();
+      if (repData) setRepApplicationStatus(repData.status);
+      if (repData?.status === "approved") {
         setRep(repData);
         const { data: acts } = await supabase.from("rep_activity").select("*").eq("rep_id", repData.id).order("created_at", { ascending: false });
         if (acts) setActivities(acts);
@@ -136,12 +138,35 @@ export default function RepPortalPage() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white text-sm">Loading...</div>
   );
 
-  if (!rep) return (
+  if (repApplicationStatus === "pending") return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl p-8 max-w-md text-center">
         <div className="text-4xl mb-3">⏳</div>
         <h2 className="font-bold text-slate-800 mb-2">Application Pending</h2>
         <p className="text-sm text-slate-500">Your rep application is under review. You will hear back within 48 hours.</p>
+      </div>
+    </div>
+  );
+
+  if (repApplicationStatus === "rejected") return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl p-8 max-w-md text-center">
+        <div className="text-4xl mb-3">✕</div>
+        <h2 className="font-bold text-slate-800 mb-2">Application Not Approved</h2>
+        <p className="text-sm text-slate-500">Your rep application wasn't approved at this time. Contact hello@pipedesk.app with any questions.</p>
+      </div>
+    </div>
+  );
+
+  if (!rep) return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl p-8 max-w-md text-center">
+        <div className="text-4xl mb-3">📝</div>
+        <h2 className="font-bold text-slate-800 mb-2">No Application Found</h2>
+        <p className="text-sm text-slate-500 mb-5">You haven't applied to become a PipeDesk sales rep yet.</p>
+        <a href="/reps" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6 py-3 text-sm transition">
+          Apply now →
+        </a>
       </div>
     </div>
   );
