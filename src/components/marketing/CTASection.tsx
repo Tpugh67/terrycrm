@@ -18,19 +18,22 @@ export default function CTASection({
   secondaryCta?: HeroCta;
   background?: "gradient" | "dark" | "alt";
 }) {
+  // Inline style so no shared text class can wash this out to grey on the
+  // gradient/dark backgrounds.
+  const subtleColor = background === "alt" ? undefined : "rgba(255,255,255,0.88)";
   return (
     <Section background={background} spacing="loose">
       <Container width="narrow" className="text-center">
         <Reveal effect="slide-up">
-          {eyebrow && <p className="pd-text-caption mb-4 uppercase tracking-wider opacity-90">{eyebrow}</p>}
+          {eyebrow && <p className="pd-text-caption mb-4 uppercase tracking-wider" style={{ color: subtleColor }}>{eyebrow}</p>}
           <h2 className="pd-text-h1 mb-4">{title}</h2>
-          {description && <p className="pd-text-body-lg mb-10 opacity-90">{description}</p>}
+          {description && <p className="pd-text-body-lg mb-10" style={{ color: subtleColor }}>{description}</p>}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button href={primaryCta.href} variant="primary" size="lg" className="bg-white text-(--color-primary) hover:bg-white/90">
+            <Button href={primaryCta.href} variant="onDark" size="lg">
               {primaryCta.label}
             </Button>
             {secondaryCta && (
-              <Button href={secondaryCta.href} variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10">
+              <Button href={secondaryCta.href} variant="onDarkOutline" size="lg">
                 {secondaryCta.label}
               </Button>
             )}

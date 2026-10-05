@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "onDark" | "onDarkOutline";
 type Size = "sm" | "md" | "lg";
 
 const VARIANT_CLASSES: Record<Variant, string> = {
@@ -15,6 +15,10 @@ const VARIANT_CLASSES: Record<Variant, string> = {
     "bg-transparent text-(--color-foreground-muted) hover:bg-(--color-surface-alt) hover:text-(--color-foreground)",
   danger:
     "bg-(--color-danger) text-white hover:opacity-90",
+  onDark:
+    "bg-white text-(--color-primary) hover:bg-white/90 shadow-[var(--shadow-sm)]",
+  onDarkOutline:
+    "bg-transparent text-white border border-white/30 hover:bg-white/10",
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
