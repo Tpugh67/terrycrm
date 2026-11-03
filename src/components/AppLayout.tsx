@@ -8,7 +8,7 @@ import WelcomeModal from "./WelcomeModal";
 import OnboardingChecklist from "./OnboardingChecklist";
 import GlobalSearch from "./GlobalSearch";
 import Logo from "./Logo";
-import { CAMPAIGN_ADMIN_EMAIL } from "../lib/campaignAdmin";
+import { canSeeCampaignReports } from "../lib/campaignAdmin";
 
 // No PUBLIC_PATHS list here anymore — this component only ever mounts
 // inside (app)/(shell)/layout.tsx (see docs/adr/0001-public-app-layout-split.md),
@@ -351,7 +351,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const baseNav = getNavByRole(userRole);
   const navSections: NavSection[] = campaignAccess && userRole === "user"
     ? [{ section: "CAMPAIGN", items: [{ href: "/campaign", icon: "🎯", label: "Campaign" }] }, ...baseNav]
-    : userRole === "admin" && userEmail.toLowerCase() === CAMPAIGN_ADMIN_EMAIL
+    : userRole === "admin" && canSeeCampaignReports(userEmail)
     ? [...baseNav, { section: "CAMPAIGN", items: [{ href: "/admin/campaign", icon: "🎯", label: "Campaign Reports" }] }]
     : baseNav;
   const roleLabel = getRoleLabel(userRole);
