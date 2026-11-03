@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { CAMPAIGN_ADMIN_EMAIL } from "../../../lib/campaignAdmin";
+import { canSeeCampaignReports } from "../../../lib/campaignAdmin";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,8 +30,8 @@ export async function GET(req: NextRequest) {
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData.user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
-    // Only Terry. Being an admin is not enough.
-    if ((userData.user.email || "").toLowerCase() !== CAMPAIGN_ADMIN_EMAIL) {
+    // Only the listed accounts. Being an admin is not enough.
+    if (!canSeeCampaignReports(userData.user.email)) {
       return NextResponse.json({ error: "Not allowed" }, { status: 403 });
     }
 
