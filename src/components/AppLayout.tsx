@@ -18,7 +18,7 @@ import Logo from "./Logo";
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard", "/contacts": "Contacts", "/pipeline": "Pipeline",
-  "/tasks": "Tasks", "/settings": "Settings", "/admin/reps": "Rep Applications",
+  "/tasks": "Tasks", "/campaign": "Campaign", "/settings": "Settings", "/admin/reps": "Rep Applications",
   "/reports": "Admin Command Center",
   "/admin/affiliates": "Affiliate Applications",
   "/executive-leadership": "Executive Recruiting",
@@ -294,6 +294,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [userIndustry, setUserIndustry] = useState("");
   const [userRole, setUserRole] = useState("user");
   const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const [campaignAccess, setCampaignAccess] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [industriesOpen, setIndustriesOpen] = useState(false);
@@ -318,9 +319,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (user?.email) {
         setUserEmail(user.email);
         setUserInitials(user.email.slice(0, 2).toUpperCase());
-        const { data: profile } = await supabase.from("profiles").select("industry, role").eq("id", user.id).single();
+        const { data: profile } = await supabase.from("profiles").select("industry, role, campaign_access").eq("id", user.id).single();
         if (profile?.industry) setUserIndustry(profile.industry);
         if (profile?.role) setUserRole(profile.role);
+        if (profile?.campaign_access) setCampaignAccess(true);
 
         // Same protection already applied to Dashboard, Pipeline, and
         // Contacts: while Demo Mode is active for an admin, never show
@@ -345,7 +347,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const pageTitle = PAGE_TITLES[pathname]
     || (pathname.startsWith("/executive-leadership") ? "Executive Recruiting" : "Workspace");
-  const navSections = getNavByRole(userRole);
+  const baseNav = getNavByRole(userRole);
+  const navSections: NavSection[] = campaignAccess && userRole === "user"
+    ? [{ section: "CAMPAIGN", items: [{ href: "/campaign", icon: "🎯", label: "Campaign" }] }, ...baseNav]
+    : baseNav;
   const roleLabel = getRoleLabel(userRole);
   const roleBadgeColor = getRoleBadgeColor(userRole);
   const showIndustries = userRole === "admin" || userRole === "user";
