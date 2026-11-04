@@ -22,7 +22,7 @@ export default function HomePage() {
     <>
 
       <HeroSection
-        eyebrow="Trusted by growing sales teams"
+        eyebrow="Free for 14 days · no charge until your trial ends"
         title="The CRM built to help you close more deals"
         description="Stop wrestling with generic tools. PipeDesk gives you one clean pipeline, automatic follow-up reminders, and an AI assistant built into every deal — everything you need to close more, without the busywork."
         primaryCta={{ label: "Start free trial", href: "/login?mode=signup" }}
@@ -95,25 +95,25 @@ export default function HomePage() {
             price: "$29",
             period: "/month",
             description: "For one person running their own pipeline.",
-            features: ["1 user", "Unlimited deals", "CSV import/export"],
+            features: ["1 user", "Unlimited deals", "AI deal assistant", "CSV import/export"],
             cta: { label: "Start free trial", href: "/login?mode=signup&plan=solo" },
           },
           {
             name: "Team",
             price: "$79",
             period: "/month",
-            description: "For small teams working deals together.",
-            features: ["5 users", "Unlimited deals", "AI deal assistant"],
-            cta: { label: "Start free trial", href: "/login?mode=signup&plan=team" },
+            description: "Multi-user accounts for small teams. Coming soon.",
+            features: ["Up to 5 users (in development)", "Everything in Solo"],
+            cta: { label: "Join the waitlist", href: "mailto:hello@pipedesk.app?subject=Team%20Plan%20Waitlist" },
             highlighted: true,
           },
           {
             name: "Business",
             price: "$149",
             period: "/month",
-            description: "For growing teams that need visibility.",
-            features: ["Unlimited users", "Priority support", "Admin analytics"],
-            cta: { label: "Start free trial", href: "/login?mode=signup&plan=business" },
+            description: "Larger multi-user accounts. Coming soon.",
+            features: ["Up to 15 users (in development)", "Everything in Team"],
+            cta: { label: "Join the waitlist", href: "mailto:hello@pipedesk.app?subject=Business%20Plan%20Waitlist" },
           },
         ]}
       />

@@ -12,7 +12,15 @@ const PRICES = {
 export async function POST(req: NextRequest) {
   try {
     const { plan, email } = await req.json();
-    const priceId = PRICES[plan as keyof typeof PRICES] || PRICES.solo;
+    // Team and Business are multi-user plans that are not built yet. Do not
+    // sell them until multi-user accounts exist.
+    if (plan === "team" || plan === "business") {
+      return NextResponse.json(
+        { error: "The Team and Business plans are not available yet. Please choose Solo, or email hello@pipedesk.app to join the waitlist." },
+        { status: 400 }
+      );
+    }
+    const priceId = PRICES.solo;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
