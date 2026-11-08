@@ -260,7 +260,7 @@ export default function Dashboard() {
         if (useDemo || allDone) return null;
         const steps = [
           { done: step1, label: "Import your contacts", desc: "Bring in your existing leads and clients.", href: "/contacts", cta: "Import contacts" },
-          { done: step2, label: "Add your first deal", desc: "Start tracking an opportunity in your pipeline.", href: "/real-estate", cta: "Add a deal" },
+          { done: step2, label: "Add your first deal", desc: "Start tracking an opportunity in your pipeline.", href: "/pipeline", cta: "Add a deal" },
           { done: step3, label: "Schedule your first follow-up", desc: "Set a next-step date so nothing falls through the cracks.", href: "/pipeline", cta: "Set a follow-up" },
           { done: step4, label: "Close your first deal", desc: "Mark a deal won and see it reflected in your revenue.", href: "/pipeline", cta: "View pipeline" },
         ];
