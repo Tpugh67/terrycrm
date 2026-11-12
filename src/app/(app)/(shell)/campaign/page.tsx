@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Call, Device } from "@twilio/voice-sdk";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
+import { toE164 } from "../../../../lib/phone";
+import { validateDestination } from "../../../../lib/voiceRules";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -74,6 +77,20 @@ type Note = {
   channel?: string | null;
   outcome?: string | null;
 };
+
+type CallLog = {
+  id: number; deal_id: number | null; direction: "outbound" | "inbound"; other_number: string;
+  status: string; duration_secs: number; outcome: string | null; notes: string | null; created_at: string;
+};
+type CallInfo = { dealId: number | null; label: string; direction: "outbound"; number: string };
+type Wrap = CallInfo & { sid: string | null; secs: number; failed: string | null };
+
+const CALL_STATUS: Record<string, string> = {
+  initiated: "Dialed", ringing: "Ringing", completed: "Completed", busy: "Busy", no_answer: "No answer",
+  failed: "Failed", canceled: "Canceled", refused_number: "Blocked number", refused_mismatch: "Blocked",
+  refused_opted_out: "Blocked (opted out)", refused_limit: "Daily limit reached",
+};
+function fmtSecs(n: number) { return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`; }
 
 const EMPTY_FORM = {
   title: "", website: "", seller: "", contact_email: "", phone: "", address: "",
@@ -180,6 +197,23 @@ export default function CampaignPage() {
   const [imp, setImp] = useState<{ fileName: string; rows: ImportRow[] } | null>(null);
   const [impMsg, setImpMsg] = useState("");
   const [impBusy, setImpBusy] = useState(false);
+
+  // Calling (Twilio, in the browser)
+  const [callState, setCallState] = useState<"idle" | "connecting" | "ringing" | "in_call">("idle");
+  const [callSecs, setCallSecs] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [callInfo, setCallInfo] = useState<CallInfo | null>(null);
+  const [showDialer, setShowDialer] = useState(false);
+  const [dialNumber, setDialNumber] = useState("");
+  const [callMsg, setCallMsg] = useState("");
+  const [calls, setCalls] = useState<CallLog[]>([]);
+  const [wrap, setWrap] = useState<Wrap | null>(null);
+  const [wrapForm, setWrapForm] = useState({ outcome: "no_response", note: "", followUp: "" });
+  const [wrapBusy, setWrapBusy] = useState(false);
+  const deviceRef = useRef<Device | null>(null);
+  const callRef = useRef<Call | null>(null);
+  const dealsRef = useRef<Deal[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formMsg, setFormMsg] = useState("");
   const [saving, setSaving] = useState(false);
@@ -202,6 +236,12 @@ export default function CampaignPage() {
     } else setNotes([]);
   }, []);
 
+  const loadCalls = useCallback(async (uid: string) => {
+    const { data } = await supabase.from("call_logs").select("id, deal_id, direction, other_number, status, duration_secs, outcome, notes, created_at")
+      .eq("user_id", uid).order("created_at", { ascending: false }).limit(25);
+    setCalls((data || []) as CallLog[]);
+  }, []);
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -213,10 +253,11 @@ export default function CampaignPage() {
       setUserId(user.id);
       setAllowed(true);
       await load(user.id);
+      await loadCalls(user.id);
       if (active) setLoading(false);
     })();
     return () => { active = false; };
-  }, [router, load]);
+  }, [router, load, loadCalls]);
 
   const open = deals.find((d) => d.id === openId) || null;
   const openNotes = notes.filter((n) => n.deal_id === openId);
@@ -316,32 +357,153 @@ export default function CampaignPage() {
     await load(userId);
   }
 
-  async function logOutreach() {
-    if (!open) return;
-    setDetailMsg("");
-    if (open.opted_out_at) { setDetailMsg("This contact opted out. No new outreach can be logged."); return; }
+  // Saves one outreach entry on a lead and gently advances its stage.
+  // Returns an error message, or null on success.
+  async function recordOutreach(deal: Deal, channel: string, outcome: string, note: string): Promise<string | null> {
+    if (deal.opted_out_at) return "This contact opted out. No new outreach can be logged.";
     const { error } = await supabase.from("notes").insert({
-      deal_id: open.id, user_id: userId, channel: log.channel, outcome: log.outcome,
-      content: `${label(CHANNELS, log.channel)} — ${label(OUTCOMES, log.outcome)}${log.note.trim() ? ": " + log.note.trim() : ""}`,
+      deal_id: deal.id, user_id: userId, channel, outcome,
+      content: `${label(CHANNELS, channel)} — ${label(OUTCOMES, outcome)}${note.trim() ? ": " + note.trim() : ""}`,
     });
-    if (error) { setDetailMsg(error.message); return; }
+    if (error) return error.message;
 
     // Gentle auto-advance (never moves a lead backwards).
-    const idx = STAGES.indexOf(open.stage);
+    const idx = STAGES.indexOf(deal.stage);
     let target: string | null = null;
-    if (log.outcome === "opted_out") target = "Lost";
-    else if (log.outcome === "meeting_booked" && idx < STAGES.indexOf("Meeting Scheduled")) target = "Meeting Scheduled";
-    else if ((log.outcome === "replied" || log.outcome === "interested") && idx < STAGES.indexOf("Responded")) target = "Responded";
+    if (outcome === "opted_out") target = "Lost";
+    else if (outcome === "meeting_booked" && idx < STAGES.indexOf("Meeting Scheduled")) target = "Meeting Scheduled";
+    else if ((outcome === "replied" || outcome === "interested") && idx < STAGES.indexOf("Responded")) target = "Responded";
     else if (idx < STAGES.indexOf("Contacted")) target = "Contacted";
 
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (target) patch.stage = target;
-    if (log.outcome === "opted_out") patch.opted_out_at = new Date().toISOString();
-    await supabase.from("deals").update(patch).eq("id", open.id).eq("user_id", userId);
+    if (outcome === "opted_out") patch.opted_out_at = new Date().toISOString();
+    await supabase.from("deals").update(patch).eq("id", deal.id).eq("user_id", userId);
+    return null;
+  }
 
+  async function logOutreach() {
+    if (!open) return;
+    setDetailMsg("");
+    const err = await recordOutreach(open, log.channel, log.outcome, log.note);
+    if (err) { setDetailMsg(err); return; }
     setLog({ channel: log.channel, outcome: "no_response", note: "" });
     setDetailMsg(log.outcome === "opted_out" ? "Logged. This contact is now marked do-not-contact." : "Outreach logged.");
     await load(userId);
+  }
+
+  // ── Calling ──
+  useEffect(() => { dealsRef.current = deals; }, [deals]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      callRef.current?.disconnect();
+      deviceRef.current?.destroy();
+    };
+  }, []);
+
+  async function fetchVoiceToken(): Promise<string> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Please sign in again.");
+    const res = await fetch("/api/voice/token", { headers: { Authorization: `Bearer ${session.access_token}` } });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || "Calling is not available right now.");
+    return body.token as string;
+  }
+
+  async function ensureDevice(): Promise<Device> {
+    if (deviceRef.current) return deviceRef.current;
+    const { Device } = await import("@twilio/voice-sdk");
+    const device = new Device(await fetchVoiceToken(), { logLevel: 1 });
+    device.on("tokenWillExpire", async () => { try { device.updateToken(await fetchVoiceToken()); } catch { /* retried on next expiry */ } });
+    device.on("error", () => { /* individual calls report their own errors */ });
+    deviceRef.current = device;
+    return device;
+  }
+
+  // Watches one outbound call from ring to hang-up.
+  function wireCall(call: Call, info: CallInfo) {
+    callRef.current = call;
+    setCallInfo(info); setCallSecs(0); setMuted(false);
+    let started = 0, finished = false;
+    const finish = (failed?: string) => {
+      if (finished) return;
+      finished = true;
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      callRef.current = null;
+      setCallState("idle"); setMuted(false);
+      const secs = started ? Math.floor((Date.now() - started) / 1000) : 0;
+      setWrap({ ...info, sid: call.parameters?.CallSid || null, secs, failed: failed || null });
+      setWrapForm({ outcome: secs < 5 ? "no_response" : "replied", note: "", followUp: "" });
+    };
+    call.on("ringing", () => setCallState("ringing"));
+    call.on("accept", () => {
+      started = Date.now();
+      setCallState("in_call");
+      timerRef.current = setInterval(() => setCallSecs(Math.floor((Date.now() - started) / 1000)), 1000);
+    });
+    call.on("disconnect", () => finish());
+    call.on("cancel", () => finish());
+    call.on("reject", () => finish());
+    call.on("error", (e: { message?: string }) => finish(e?.message || "The call failed."));
+  }
+
+  async function startCallTo(raw: string, deal: Deal | null) {
+    const say = (m: string) => (deal ? setDetailMsg(m) : setCallMsg(m));
+    say("");
+    if (callRef.current || callState !== "idle") { say("Finish your current call first."); return; }
+    if (deal?.opted_out_at) { say("This contact opted out. Do not call."); return; }
+    const dest = validateDestination(raw);
+    if (!dest.ok) { say(dest.reason); return; }
+    const blocked = dealsRef.current.find((d) => d.opted_out_at && toE164(d.phone) === dest.e164);
+    if (blocked) { say(`${blocked.title} opted out. Do not call.`); return; }
+    setCallState("connecting");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); // asks for microphone permission
+      stream.getTracks().forEach((t) => t.stop());
+      const device = await ensureDevice();
+      const call = await device.connect({ params: { To: dest.e164, ...(deal ? { dealId: String(deal.id) } : {}) } });
+      const lead = deal || dealsRef.current.find((d) => toE164(d.phone) === dest.e164) || null;
+      wireCall(call, { dealId: lead?.id ?? null, label: lead?.title || dest.e164, direction: "outbound", number: dest.e164 });
+      setCallState("connecting");
+    } catch (e) {
+      callRef.current = null; setCallState("idle");
+      const msg = e instanceof Error ? e.message : "Could not start the call.";
+      say(msg.includes("Permission") || msg.includes("NotAllowed")
+        ? "Allow microphone access in your browser, then try again." : "Call failed: " + msg);
+    }
+  }
+
+  function hangUp() { callRef.current?.disconnect(); }
+  function toggleMute() {
+    const c = callRef.current;
+    if (!c) return;
+    c.mute(!muted); setMuted(!muted);
+  }
+
+  // After every call: record the outcome, notes and any follow-up date.
+  async function saveWrap() {
+    if (!wrap) return;
+    setWrapBusy(true);
+    let q = supabase.from("call_logs").select("id").eq("user_id", userId).order("created_at", { ascending: false }).limit(1);
+    if (wrap.sid) q = q.eq("call_sid", wrap.sid);
+    const { data: row } = await q.maybeSingle();
+    if (row) await supabase.from("call_logs").update({ outcome: wrapForm.outcome, notes: wrapForm.note.trim() || null }).eq("id", row.id);
+    const deal = wrap.dealId ? dealsRef.current.find((d) => d.id === wrap.dealId) : null;
+    let problem = "";
+    if (deal) {
+      const err = await recordOutreach(deal, "phone", wrapForm.outcome, wrapForm.note || `Call, ${fmtSecs(wrap.secs)}`);
+      if (err) problem = err;
+      if (wrapForm.followUp) {
+        await supabase.from("deals").update({ next_follow_up: wrapForm.followUp }).eq("id", deal.id).eq("user_id", userId);
+      }
+    }
+    await load(userId);
+    await loadCalls(userId);
+    setWrapBusy(false);
+    if (problem) setCallMsg(problem);
+    setWrap(null);
   }
 
   // ── CSV import ──
@@ -478,6 +640,7 @@ export default function CampaignPage() {
         <div className="flex items-center gap-2">
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search leads…"
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm w-48" />
+          <button onClick={() => { setCallMsg(""); setShowDialer(true); }} className={btnGhost}>📞 Dialer</button>
           <button onClick={() => { setImp(null); setImpMsg(""); setShowImport(true); }} className={btnGhost}>Import CSV</button>
           <button onClick={() => { setForm(EMPTY_FORM); setFormMsg(""); setShowAdd(true); }} className={btnPrimary}>+ Add lead</button>
         </div>
@@ -605,6 +768,100 @@ export default function CampaignPage() {
         </div>
       )}
 
+      {/* In-call bar */}
+      {callState !== "idle" && callInfo && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
+          <div>
+            <div className="text-sm font-semibold">{callInfo.label}</div>
+            <div className="text-xs text-slate-300">
+              {callState === "connecting" ? "Connecting…" : callState === "ringing" ? "Ringing…" : `Connected · ${fmtSecs(callSecs)}`}
+            </div>
+          </div>
+          <button onClick={toggleMute} disabled={callState !== "in_call"}
+            className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold hover:bg-slate-600 disabled:opacity-40">
+            {muted ? "Unmute" : "Mute"}
+          </button>
+          <button onClick={hangUp} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-700">Hang up</button>
+        </div>
+      )}
+
+      {/* After-call wrap-up */}
+      {wrap && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-5">
+            <h2 className="text-lg font-bold text-slate-900">
+              {wrap.failed ? "Call failed" : wrap.secs > 0 ? "Call completed" : "Call not connected"}
+            </h2>
+            <p className="text-sm text-slate-500">
+              Call to {wrap.label}
+              {wrap.secs > 0 ? ` · ${fmtSecs(wrap.secs)}` : ""}
+            </p>
+            {wrap.failed && <p className="mt-2 text-sm text-red-700">{wrap.failed}</p>}
+            <div className="mt-3 space-y-2">
+              <select value={wrapForm.outcome} onChange={(e) => setWrapForm({ ...wrapForm, outcome: e.target.value })} className={inputCls}>
+                {OUTCOMES.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
+              </select>
+              <input value={wrapForm.note} onChange={(e) => setWrapForm({ ...wrapForm, note: e.target.value })}
+                placeholder="Notes (optional)" className={inputCls} />
+              {wrap.dealId && (
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 block mb-1">Follow-up reminder (optional)</label>
+                  <input type="date" value={wrapForm.followUp} onChange={(e) => setWrapForm({ ...wrapForm, followUp: e.target.value })} className={inputCls} />
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => { setWrap(null); if (userId) loadCalls(userId); }} className={btnGhost}>Skip</button>
+              <button onClick={saveWrap} disabled={wrapBusy} className={btnPrimary}>{wrapBusy ? "Saving…" : "Save"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialer */}
+      {showDialer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowDialer(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between">
+              <h2 className="text-lg font-bold text-slate-900">Dialer</h2>
+              <button onClick={() => setShowDialer(false)} className="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
+            </div>
+            <p className="text-sm text-slate-500 mt-1">Calls go out showing the SkyLinkStarLink number. US numbers only.</p>
+            <div className="mt-3 flex gap-2">
+              <input value={dialNumber} onChange={(e) => setDialNumber(e.target.value)} placeholder="(555) 555-5555"
+                onKeyDown={(e) => { if (e.key === "Enter") startCallTo(dialNumber, null); }} className={inputCls} />
+              <button onClick={() => startCallTo(dialNumber, null)} disabled={callState !== "idle"}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 whitespace-nowrap">📞 Dial</button>
+            </div>
+            {callMsg && <div className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{callMsg}</div>}
+
+            <h3 className="font-semibold text-slate-900 text-sm mt-5 mb-2">Recent calls</h3>
+            {calls.length === 0 && <p className="text-sm text-slate-400">No calls yet.</p>}
+            <ul className="divide-y divide-slate-100">
+              {calls.map((c) => {
+                const d = c.deal_id ? deals.find((x) => x.id === c.deal_id) : null;
+                return (
+                  <li key={c.id} className="py-2">
+                    <button className="text-left w-full" onClick={() => { if (d) { setShowDialer(false); openDeal(d); } }}>
+                      <div className="text-sm font-semibold text-slate-800">
+                        ↗ {d?.title || c.other_number}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {fmtTime(c.created_at)} · {CALL_STATUS[c.status] || c.status}
+                        {c.duration_secs > 0 ? ` · ${fmtSecs(c.duration_secs)}` : ""}
+                        {c.outcome ? ` · ${label(OUTCOMES, c.outcome)}` : ""}
+                      </div>
+                      {c.notes && <div className="text-xs text-slate-600 mt-0.5">{c.notes}</div>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Import modal */}
       {/* Import modal */}
       {showImport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowImport(false)}>
@@ -681,6 +938,21 @@ export default function CampaignPage() {
               <select value={open.stage} onChange={(e) => changeStage(open, e.target.value)} className={inputCls}>
                 {STAGES.map((s) => <option key={s}>{s}</option>)}
               </select>
+            </div>
+
+            {/* Call */}
+            <div className="mt-3 flex items-center gap-3">
+              {open.opted_out_at ? (
+                <span className="text-sm text-red-700">Opted out. Do not call.</span>
+              ) : (
+                <button onClick={() => startCallTo(open.phone || "", open)} disabled={callState !== "idle" || !validateDestination(open.phone).ok}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+                  📞 Call {open.phone || ""}
+                </button>
+              )}
+              {!open.opted_out_at && !validateDestination(open.phone).ok && (
+                <span className="text-xs text-slate-500">Add a valid US phone number to call.</span>
+              )}
             </div>
 
             {/* Outreach log */}

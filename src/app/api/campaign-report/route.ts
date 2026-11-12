@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       .from("profiles").select("id, email").eq("campaign_access", true);
     if (repErr) throw new Error(repErr.message);
     const repIds = (reps || []).map((r) => r.id);
-    if (!repIds.length) return NextResponse.json({ reps: [], deals: [], notes: [] });
+    if (!repIds.length) return NextResponse.json({ reps: [], deals: [], notes: [], calls: [] });
 
     const deals = await fetchAll((from, to) =>
       supabase.from("deals")
@@ -54,7 +54,12 @@ export async function GET(req: NextRequest) {
         .in("user_id", repIds).gte("created_at", since).order("id").range(from, to));
     const notes = allNotes.filter((n) => dealIds.has(n.deal_id));
 
-    return NextResponse.json({ reps, deals, notes });
+    const calls = await fetchAll((from, to) =>
+      supabase.from("call_logs")
+        .select("id, user_id, deal_id, direction, other_number, status, duration_secs, outcome, created_at")
+        .in("user_id", repIds).gte("created_at", since).order("id").range(from, to));
+
+    return NextResponse.json({ reps, deals, notes, calls });
   } catch (e) {
     console.error("campaign-report error:", e);
     return NextResponse.json({ error: "Could not load report" }, { status: 500 });
