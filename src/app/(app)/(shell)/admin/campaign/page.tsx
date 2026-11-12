@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../../../lib/supabase";
+import { estimateCost } from "../../../../../lib/voiceRules";
 
 // Management view of the SkyLinkStarLink outbound campaign. Data comes from
 // /api/campaign-report, which only answers to one specific account.
@@ -32,7 +33,8 @@ type Note = {
   id: number; deal_id: number; user_id: string; content: string; created_at: string;
   channel: string | null; outcome: string | null;
 };
-type Report = { reps: { id: string; email: string }[]; deals: Deal[]; notes: Note[] };
+type CallRow = { id: number; user_id: string; status: string; duration_secs: number; created_at: string };
+type Report = { reps: { id: string; email: string }[]; deals: Deal[]; notes: Note[]; calls: CallRow[] };
 
 const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
@@ -96,6 +98,20 @@ export default function CampaignReportsPage() {
       if (i !== undefined) days[i].newLeads++;
     }
 
+    // Calling: last 14 days (blocked attempts are counted separately and cost nothing)
+    const callDays = days.map((d) => ({ key: d.key, label: d.label, calls: 0, connected: 0, secs: 0, cost: 0, blocked: 0 }));
+    const callIdx = Object.fromEntries(callDays.map((d, i) => [d.key, i]));
+    for (const c of report.calls || []) {
+      const i = callIdx[dayKey(new Date(c.created_at))];
+      if (i === undefined) continue;
+      if (String(c.status).startsWith("refused")) { callDays[i].blocked++; continue; }
+      callDays[i].calls++;
+      if (c.duration_secs >= 5) callDays[i].connected++;
+      callDays[i].secs += c.duration_secs || 0;
+      callDays[i].cost += estimateCost(c.duration_secs || 0);
+    }
+    const callTotals = callDays.reduce((a, d) => ({ calls: a.calls + d.calls, secs: a.secs + d.secs, cost: a.cost + d.cost, blocked: a.blocked + d.blocked }), { calls: 0, secs: 0, cost: 0, blocked: 0 });
+
     // Weekly (last 8 weeks, Monday start)
     const thisMonday = mondayOf(new Date());
     const weeks: { start: Date; label: string; newLeads: number; touches: number; responses: number; meetings: number; won: number }[] = [];
@@ -139,7 +155,7 @@ export default function CampaignReportsPage() {
     }));
 
     return {
-      days, weeks, stageCount, sources, packages,
+      days, weeks, stageCount, sources, packages, callDays, callTotals,
       total: deals.length,
       pipelineValue: open.reduce((s, d) => s + (d.deal_value || 0), 0),
       recurring: won.reduce((s, d) => s + (d.recurring_revenue || 0), 0),
@@ -216,6 +232,30 @@ export default function CampaignReportsPage() {
                 <td className={td + " font-semibold"}>{d.touches}</td>
                 {CHANNELS.map((c) => <td key={c} className={td}>{d.byChannel[c] || 0}</td>)}
                 <td className={td}>{d.responses}</td><td className={td}>{d.meetings}</td><td className={td}>{d.newLeads}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Calling */}
+      <div className={card + " overflow-x-auto"}>
+        <h2 className="font-semibold text-slate-900 mb-1">Calling (last 14 days)</h2>
+        <p className="text-xs text-slate-500 mb-2">
+          {m.callTotals.calls} calls · {Math.round(m.callTotals.secs / 60)} minutes · about ${m.callTotals.cost.toFixed(2)} estimated Twilio cost
+          {m.callTotals.blocked ? ` · ${m.callTotals.blocked} blocked attempts` : ""}. Estimate uses US rates of $0.018 per started minute; check Twilio for the real charge.
+        </p>
+        <table className="w-full min-w-[520px]">
+          <thead><tr>
+            <th className={th}>Day</th><th className={th}>Calls</th><th className={th}>Connected</th>
+            <th className={th}>Minutes</th><th className={th}>Est. cost</th><th className={th}>Blocked</th>
+          </tr></thead>
+          <tbody className="divide-y divide-slate-100">
+            {m.callDays.map((d) => (
+              <tr key={d.key}>
+                <td className={td + " font-medium"}>{d.label}</td><td className={td + " font-semibold"}>{d.calls}</td>
+                <td className={td}>{d.connected}</td><td className={td}>{(d.secs / 60).toFixed(1)}</td>
+                <td className={td}>${d.cost.toFixed(2)}</td><td className={td}>{d.blocked}</td>
               </tr>
             ))}
           </tbody>
