@@ -349,11 +349,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pageTitle = PAGE_TITLES[pathname]
     || (pathname.startsWith("/executive-leadership") ? "Executive Recruiting" : "Workspace");
   const baseNav = getNavByRole(userRole);
-  const navSections: NavSection[] = campaignAccess && userRole === "user"
-    ? [{ section: "CAMPAIGN", items: [{ href: "/campaign", icon: "🎯", label: "Campaign" }] }, ...baseNav]
-    : userRole === "admin" && canSeeCampaignReports(userEmail)
-    ? [...baseNav, { section: "CAMPAIGN", items: [{ href: "/admin/campaign", icon: "🎯", label: "Campaign Reports" }] }]
-    : baseNav;
+  const campaignItems: { href: string; icon: string; label: string }[] = [];
+  if (campaignAccess && (userRole === "user" || userRole === "admin")) {
+    campaignItems.push({ href: "/campaign", icon: "🎯", label: "Campaign" });
+  }
+  if (userRole === "admin" && canSeeCampaignReports(userEmail)) {
+    campaignItems.push({ href: "/admin/campaign", icon: "📊", label: "Campaign Reports" });
+  }
+  const navSections: NavSection[] = campaignItems.length === 0
+    ? baseNav
+    : userRole === "admin"
+    ? [...baseNav, { section: "CAMPAIGN", items: campaignItems }]
+    : [{ section: "CAMPAIGN", items: campaignItems }, ...baseNav];
   const roleLabel = getRoleLabel(userRole);
   const roleBadgeColor = getRoleBadgeColor(userRole);
   const showIndustries = userRole === "admin" || userRole === "user";
