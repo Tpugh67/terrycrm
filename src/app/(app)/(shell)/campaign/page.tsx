@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Call, Device } from "@twilio/voice-sdk";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
+import { toE164 } from "../../../../lib/phone";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -180,6 +182,15 @@ export default function CampaignPage() {
   const [imp, setImp] = useState<{ fileName: string; rows: ImportRow[] } | null>(null);
   const [impMsg, setImpMsg] = useState("");
   const [impBusy, setImpBusy] = useState(false);
+
+  // Calling (Twilio, in the browser)
+  const [callState, setCallState] = useState<"idle" | "connecting" | "ringing" | "in_call">("idle");
+  const [callSecs, setCallSecs] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [callDealId, setCallDealId] = useState<number | null>(null);
+  const deviceRef = useRef<Device | null>(null);
+  const callRef = useRef<Call | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formMsg, setFormMsg] = useState("");
   const [saving, setSaving] = useState(false);
@@ -342,6 +353,82 @@ export default function CampaignPage() {
     setLog({ channel: log.channel, outcome: "no_response", note: "" });
     setDetailMsg(log.outcome === "opted_out" ? "Logged. This contact is now marked do-not-contact." : "Outreach logged.");
     await load(userId);
+  }
+
+  // ── Calling ──
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      callRef.current?.disconnect();
+      deviceRef.current?.destroy();
+    };
+  }, []);
+
+  function stopTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }
+
+  function endedCall(deal: Deal, secs: number) {
+    stopTimer();
+    callRef.current = null;
+    setCallState("idle"); setMuted(false);
+    const m = Math.floor(secs / 60), r = secs % 60;
+    const len = `${m}:${String(r).padStart(2, "0")}`;
+    // Hand the lead's panel back with the call pre-filled, so the outcome is one click.
+    openDeal(deal);
+    setLog({ channel: "phone", outcome: secs < 5 ? "no_response" : "replied", note: `Call, ${len}` });
+    setDetailMsg(`Call ended (${len}). Choose what happened and click Log it.`);
+  }
+
+  async function startCall(d: Deal) {
+    setDetailMsg("");
+    if (callState !== "idle") { setDetailMsg("Finish your current call first."); return; }
+    if (d.opted_out_at) { setDetailMsg("This contact opted out. Do not call."); return; }
+    const to = toE164(d.phone);
+    if (!to) { setDetailMsg("This lead has no valid US phone number. Add one under Lead details, then save."); return; }
+    setCallState("connecting"); setCallDealId(d.id); setCallSecs(0);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Please sign in again.");
+      const res = await fetch("/api/voice/token", { headers: { Authorization: `Bearer ${session.access_token}` } });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Calling is not available right now.");
+
+      await navigator.mediaDevices.getUserMedia({ audio: true }); // asks for microphone permission
+      const { Device } = await import("@twilio/voice-sdk");
+      deviceRef.current?.destroy();
+      const device = new Device(body.token, { logLevel: 1 });
+      deviceRef.current = device;
+      const call = await device.connect({ params: { To: to, dealId: String(d.id) } });
+      callRef.current = call;
+      setCallState("ringing");
+      let started = 0;
+      call.on("accept", () => {
+        started = Date.now();
+        setCallState("in_call");
+        timerRef.current = setInterval(() => setCallSecs(Math.floor((Date.now() - started) / 1000)), 1000);
+      });
+      const finish = () => endedCall(d, started ? Math.floor((Date.now() - started) / 1000) : 0);
+      call.on("disconnect", finish);
+      call.on("cancel", finish);
+      call.on("reject", finish);
+      call.on("error", (e: { message?: string }) => {
+        stopTimer(); callRef.current = null; setCallState("idle");
+        openDeal(d); setDetailMsg("Call problem: " + (e?.message || "please try again."));
+      });
+    } catch (e) {
+      stopTimer(); callRef.current = null; setCallState("idle");
+      const msg = e instanceof Error ? e.message : "Could not start the call.";
+      setDetailMsg(msg.includes("Permission") || msg.includes("NotAllowed")
+        ? "Allow microphone access in your browser, then try again." : msg);
+    }
+  }
+
+  function hangUp() { callRef.current?.disconnect(); }
+  function toggleMute() {
+    const c = callRef.current;
+    if (!c) return;
+    c.mute(!muted); setMuted(!muted);
   }
 
   // ── CSV import ──
@@ -605,6 +692,24 @@ export default function CampaignPage() {
         </div>
       )}
 
+      {/* In-call bar */}
+      {callState !== "idle" && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
+          <div>
+            <div className="text-sm font-semibold">{dealById(callDealId || 0)?.title || "Call"}</div>
+            <div className="text-xs text-slate-300">
+              {callState === "connecting" ? "Connecting…" : callState === "ringing" ? "Ringing…"
+                : `${Math.floor(callSecs / 60)}:${String(callSecs % 60).padStart(2, "0")}`}
+            </div>
+          </div>
+          <button onClick={toggleMute} disabled={callState !== "in_call"}
+            className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold hover:bg-slate-600 disabled:opacity-40">
+            {muted ? "Unmute" : "Mute"}
+          </button>
+          <button onClick={hangUp} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-700">Hang up</button>
+        </div>
+      )}
+
       {/* Import modal */}
       {showImport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowImport(false)}>
@@ -681,6 +786,21 @@ export default function CampaignPage() {
               <select value={open.stage} onChange={(e) => changeStage(open, e.target.value)} className={inputCls}>
                 {STAGES.map((s) => <option key={s}>{s}</option>)}
               </select>
+            </div>
+
+            {/* Call */}
+            <div className="mt-3 flex items-center gap-3">
+              {open.opted_out_at ? (
+                <span className="text-sm text-red-700">Opted out. Do not call.</span>
+              ) : (
+                <button onClick={() => startCall(open)} disabled={callState !== "idle" || !toE164(open.phone)}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+                  📞 Call {open.phone || ""}
+                </button>
+              )}
+              {!open.opted_out_at && !toE164(open.phone) && (
+                <span className="text-xs text-slate-500">Add a valid US phone number to call.</span>
+              )}
             </div>
 
             {/* Outreach log */}
