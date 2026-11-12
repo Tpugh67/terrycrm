@@ -9,7 +9,14 @@ export async function readTwilioRequest(req: NextRequest, path: string): Promise
   const form = await req.formData();
   const params: Record<string, string> = {};
   form.forEach((v, k) => { params[k] = String(v); });
-  const base = process.env.NEXT_PUBLIC_APP_URL || "https://pipedesk.app";
   const signature = req.headers.get("x-twilio-signature") || "";
-  return twilio.validateRequest(authToken, signature, `${base}${path}`, params) ? params : null;
+  // Twilio signs the exact URL it called. The site is served at www, and the bare
+  // domain redirects there, so accept either host (plus any configured base URL).
+  const bases = Array.from(new Set([
+    process.env.NEXT_PUBLIC_APP_URL,
+    "https://www.pipedesk.app",
+    "https://pipedesk.app",
+  ].filter((b): b is string => !!b).map((b) => b.replace(/\/+$/, ""))));
+  const ok = bases.some((b) => twilio.validateRequest(authToken, signature, `${b}${path}`, params));
+  return ok ? params : null;
 }
