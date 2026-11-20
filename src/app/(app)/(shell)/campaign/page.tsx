@@ -202,6 +202,8 @@ export default function CampaignPage() {
   const [callState, setCallState] = useState<"idle" | "connecting" | "ringing" | "in_call">("idle");
   const [callSecs, setCallSecs] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [showKeypad, setShowKeypad] = useState(false);
+  const [sentDigits, setSentDigits] = useState("");
   const [callInfo, setCallInfo] = useState<CallInfo | null>(null);
   const [showDialer, setShowDialer] = useState(false);
   const [dialNumber, setDialNumber] = useState("");
@@ -425,14 +427,14 @@ export default function CampaignPage() {
   // Watches one outbound call from ring to hang-up.
   function wireCall(call: Call, info: CallInfo) {
     callRef.current = call;
-    setCallInfo(info); setCallSecs(0); setMuted(false);
+    setCallInfo(info); setCallSecs(0); setMuted(false); setShowKeypad(false); setSentDigits("");
     let started = 0, finished = false;
     const finish = (failed?: string) => {
       if (finished) return;
       finished = true;
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
       callRef.current = null;
-      setCallState("idle"); setMuted(false);
+      setCallState("idle"); setMuted(false); setShowKeypad(false); setSentDigits("");
       const secs = started ? Math.floor((Date.now() - started) / 1000) : 0;
       setWrap({ ...info, sid: call.parameters?.CallSid || null, secs, failed: failed || null });
       setWrapForm({ outcome: secs < 5 ? "no_response" : "replied", note: "", followUp: "" });
@@ -476,6 +478,12 @@ export default function CampaignPage() {
   }
 
   function hangUp() { callRef.current?.disconnect(); }
+  // Press a phone key during the call (for "press 1 for..." menus and extensions).
+  function pressKey(d: string) {
+    const c = callRef.current;
+    if (!c || callState !== "in_call") return;
+    try { c.sendDigits(d); setSentDigits((x) => (x + d).slice(-20)); } catch { /* ignore */ }
+  }
   function toggleMute() {
     const c = callRef.current;
     if (!c) return;
@@ -769,6 +777,17 @@ export default function CampaignPage() {
       )}
 
       {/* In-call bar */}
+      {callState !== "idle" && callInfo && showKeypad && callState === "in_call" && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[70] bg-slate-900 text-white rounded-2xl shadow-2xl p-4 w-60">
+          <div className="h-6 mb-2 text-center text-sm tracking-widest text-slate-300">{sentDigits || "Keypad"}</div>
+          <div className="grid grid-cols-3 gap-2">
+            {["1","2","3","4","5","6","7","8","9","*","0","#"].map((k) => (
+              <button key={k} onClick={() => pressKey(k)}
+                className="rounded-lg bg-slate-700 py-3 text-lg font-semibold hover:bg-slate-600 active:bg-slate-500">{k}</button>
+            ))}
+          </div>
+        </div>
+      )}
       {callState !== "idle" && callInfo && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
           <div>
@@ -780,6 +799,10 @@ export default function CampaignPage() {
           <button onClick={toggleMute} disabled={callState !== "in_call"}
             className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold hover:bg-slate-600 disabled:opacity-40">
             {muted ? "Unmute" : "Mute"}
+          </button>
+          <button onClick={() => setShowKeypad((v) => !v)} disabled={callState !== "in_call"}
+            className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold hover:bg-slate-600 disabled:opacity-40">
+            Keypad
           </button>
           <button onClick={hangUp} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-700">Hang up</button>
         </div>
